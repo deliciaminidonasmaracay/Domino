@@ -2,11 +2,11 @@ var miIdJugador = 0;
 var misFichas = [];
 var turnoActual = 0;
 
-// Esta función se llama desde main.js cuando le das a "Jugar"
+// Se activa cuando los 4 están en la mesa
 function iniciarPartidaEnMesa(id) {
     miIdJugador = id;
     
-    // Escuchar cambios en la partida (fichas en mesa, turnos, etc)
+    // Escuchar la base de datos en tiempo real
     db.ref('partida').on('value', (snapshot) => {
         const estado = snapshot.val();
         if (estado) {
@@ -17,21 +17,24 @@ function iniciarPartidaEnMesa(id) {
 }
 
 function cargarMisFichas(estado) {
-    // Obtenemos las fichas que nos tocaron según nuestro ID
     misFichas = estado['fichasJ' + miIdJugador] || [];
     const contenedor = document.getElementById("contenedorFichas");
-    contenedor.innerHTML = ""; // Limpiar antes de dibujar
+    contenedor.innerHTML = ""; 
 
-    misFichas.forEach((ficha, index) => {
+    misFichas.forEach((ficha) => {
         var img = document.createElement('img');
-        img.src = `imatges/${ficha.replace(',', '')}.png`; // Ejemplo: "0,1" -> imatges/01.png
+        
+        // AJUSTE DE RUTA: Carpeta 'imagen' y formato '01.png'
+        // Convertimos "0,1" en "01" para que coincida con tus archivos
+        let nombreArchivo = ficha.replace(',', ''); 
+        img.src = `imagen/${nombreArchivo}.png`; 
+        
         img.id = ficha;
         img.className = "ficha-domino";
         img.style.cursor = "pointer";
-        img.style.margin = "5px";
-        img.width = 50;
+        img.style.margin = "8px";
+        img.width = 60; // Un poco más grandes para que se vean bien en el celular
         
-        // Habilitar arrastre
         img.draggable = true;
         img.ondragstart = (ev) => {
             ev.dataTransfer.setData("text", ev.target.id);
@@ -46,20 +49,26 @@ function actualizarMesa(estado) {
     const divJugadas = document.getElementById("jugades");
     const divTorn = document.getElementById("torn");
 
-    // Mostrar las fichas que ya están en la mesa
-    divJugadas.innerText = "Mesa: " + (estado.mesa ? estado.mesa.join(" | ") : "Vacía");
+    // Dibujamos las fichas que ya están en la mesa
+    divJugadas.innerHTML = "";
+    if (estado.mesa) {
+        estado.mesa.forEach(f => {
+            let imgMesa = document.createElement('img');
+            imgMesa.src = `imagen/${f.replace(',', '')}.png`;
+            imgMesa.width = 40;
+            imgMesa.style.margin = "2px";
+            divJugadas.appendChild(imgMesa);
+        });
+    }
 
-    // Mostrar de quién es el turno
     if (turnoActual === miIdJugador) {
-        divTorn.innerText = "¡ES TU TURNO!";
-        divTorn.style.color = "green";
+        divTorn.innerHTML = "<h2 style='color: #2ecc71;'>¡TE TOCA JUGAR!</h2>";
     } else {
-        divTorn.innerText = "Turno del Jugador " + turnoActual;
-        divTorn.style.color = "red";
+        divTorn.innerHTML = `<p>Esperando al Jugador ${turnoActual}...</p>`;
+        divTorn.style.color = "#e74c3c";
     }
 }
 
-// Funciones para Arrastrar y Soltar (Drag & Drop)
 function allowDrop(ev) {
     ev.preventDefault();
 }
@@ -69,12 +78,11 @@ function drop(ev) {
     var fichaId = ev.dataTransfer.getData("text");
     
     if (turnoActual !== miIdJugador) {
-        alert("¡No es tu turno!");
+        alert("¡Cuidado! Todavía no es tu turno.");
         return;
     }
 
-    // Aquí enviamos la jugada a Firebase
-    registrarJugada(fichaId, ev.target.id); // ev.target.id es 'dropEsq' o 'dropDreta'
+    registrarJugada(fichaId, ev.target.id);
 }
 
 function registrarJugada(ficha, lado) {
@@ -83,24 +91,27 @@ function registrarJugada(ficha, lado) {
     partidaRef.once('value').then((snapshot) => {
         let estado = snapshot.val();
         let mesa = estado.mesa || [];
+        
+        // Quitamos la ficha de nuestra mano
         let misNuevasFichas = misFichas.filter(f => f !== ficha);
         
-        // Lógica simple: agregar a la mesa
+        // La ponemos en el lado elegido
         if (lado === "dropEsq") {
             mesa.unshift(ficha);
         } else {
             mesa.push(ficha);
         }
 
-        // Calcular siguiente turno (1->2, 2->3, 3->4, 4->1)
+        // Rotación de turnos (1 -> 2 -> 3 -> 4 -> 1)
         let siguienteTurno = (miIdJugador % 4) + 1;
 
-        // Actualizar Firebase
-        let actualizaciones = {};
-        actualizaciones['mesa'] = mesa;
-        actualizaciones['torn'] = siguienteTurno;
-        actualizaciones['fichasJ' + miIdJugador] = misNuevasFichas;
+        // Subida de datos a Firebase
+        let updates = {};
+        updates['mesa'] = mesa;
+        updates['torn'] = siguienteTurno;
+        updates['fichasJ' + miIdJugador] = misNuevasFichas;
 
-        partidaRef.update(actualizaciones);
+        partidaRef.update(updates);
     });
-}
+        }
+                                  
