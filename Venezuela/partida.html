@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Index Domino</title>
+        <script type="text/javascript" src="js/main.js"></script>
+        <link rel="stylesheet" type="text/css" href="styles.css">
+    </head>
+    <body>
+        <div class="centre" id="title">
+            <h1>Domino</h1>
+        </div>
+        <div class="central" id="home">
+            <div id="missatge"></div>
+            <button type="button" id="btnJugar" onclick="aJugar();" href="" hidden>ANAR A LA PARTIDA</button> 
+        </div>
+        <div class="central" id="domino" hidden>
+            <div id="jugades"></div>
+            <br><br>
+            <div id="dropZones">
+                <div id="dropEsq" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Esquerra</div>
+                <div id="dropDreta" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Dreta</div>
+                <br><br>
+                <div id="torn"></div>
+                <br><br>
+            </div>
+            <div id="domino"></div>
+            <div id="idDiv"></div>
+        </div>
+        <br><br><br><br>
+        <form action="/puntuar" method="POST">
+            <input type="submit" value="Sortir del Joc"/>
+        </form>
+    </body>
+</html>

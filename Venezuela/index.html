@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width-device-width, initial-scale=1.0">
+        <title>Index del joc</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <h1>Joc del dominó</h1>
+        <h4>Selecciona una de les opcions que es mostren a continuació:</h4><br>
+        <p>Si desitges jugar, primer t'has de registrar:</p>
+        <form action="/registre" method="POST">
+            <input type="submit" value="Registrar-se"/>
+        </form><br>
+        <p>Si ja tens un usuari, inicia sessió:</p>
+        <form action="/login" method="POST">
+            <input class="button" type="submit" value="Iniciar Sessió"/>
+        </form><br>
+        <p>Per a consultar els usuaris existents:</p>
+        <form action="/consultar" method="POST">
+            <input class="button" type="submit" value="Consultar usuaris"/>
+        </form><br>
+        <p>Per a consultar les puntuacions dels jugadors:</p>
+        <form action="/puntuacio" method="POST">
+            <input class="button" type="submit" value="Consultar puntuacions"/>
+        </form>
+    </body>
+</html>
