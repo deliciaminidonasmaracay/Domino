@@ -1,35 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <title>Index Domino</title>
-        <script type="text/javascript" src="js/main.js"></script>
-        <link rel="stylesheet" type="text/css" href="styles.css">
-    </head>
-    <body>
-        <div class="centre" id="title">
-            <h1>Domino</h1>
-        </div>
-        <div class="central" id="home">
-            <div id="missatge"></div>
-            <button type="button" id="btnJugar" onclick="aJugar();" href="" hidden>ANAR A LA PARTIDA</button> 
-        </div>
-        <div class="central" id="domino" hidden>
-            <div id="jugades"></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domino Venezuela - En Vivo</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // 2. TU CONFIGURACIÓN REAL (DominoVenezuela)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgcAUndkipoX3RVkgkPk7UixhjzJ0USSg",
+            authDomain: "dominovenezuela-2624b.firebaseapp.com",
+            projectId: "dominovenezuela-2624b",
+            storageBucket: "dominovenezuela-2624b.appspot.com",
+            messagingSenderId: "861659676932",
+            appId: "1:861659676932:web:bf3c5560a2dd6937ccd051"
+        };
+        
+        // Inicialización de la "antena" de datos
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+    </script>
+
+    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/partida.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div class="centre" id="title">
+        <h1>Domino Venezuela</h1>
+    </div>
+
+    <div class="central" id="home">
+        <div id="missatge">Conectando con el servidor...</div>
+        <br>
+        <button type="button" id="btnJugar" onclick="aJugar();" hidden>¡ENTRAR A LA MESA!</button> 
+    </div>
+
+    <div class="central" id="domino" hidden>
+        <div id="jugades"></div>
+        <br><br>
+        <div id="dropZones">
+            <div id="dropEsq" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Poner Izquierda</div>
+            <div id="dropDreta" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Poner Derecha</div>
             <br><br>
-            <div id="dropZones">
-                <div id="dropEsq" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Esquerra</div>
-                <div id="dropDreta" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Dreta</div>
-                <br><br>
-                <div id="torn"></div>
-                <br><br>
-            </div>
-            <div id="domino"></div>
-            <div id="idDiv"></div>
+            <div id="torn">Esperando turno...</div>
+            <br><br>
         </div>
-        <br><br><br><br>
-        <form action="/puntuar" method="POST">
-            <input type="submit" value="Sortir del Joc"/>
-        </form>
-    </body>
+        
+        <div id="misPeces" style="min-height: 100px; border-top: 2px solid #ccc; padding-top: 10px;">
+            <h3>Tus Fichas:</h3>
+            <div id="contenedorFichas"></div>
+        </div>
+        
+        <div id="idDiv"></div>
+    </div>
+
+    <br><br>
+    <div id="areaPuntuacion">
+        <button type="button" onclick="location.href='index.html'">SALIR DEL JUEGO</button>
+    </div>
+</body>
 </html>
