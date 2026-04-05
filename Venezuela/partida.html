@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino Venezuela - En Vivo</title>
+    <title>Domino Venezuela - Mesa de Juego</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // 2. TU CONFIGURACIÓN REAL (DominoVenezuela)
+        // Configuración de tu proyecto DominoVenezuela
         const firebaseConfig = {
             apiKey: "AIzaSyDgcAUndkipoX3RVkgkPk7UixhjzJ0USSg",
             authDomain: "dominovenezuela-2624b.firebaseapp.com",
@@ -19,7 +19,7 @@
             appId: "1:861659676932:web:bf3c5560a2dd6937ccd051"
         };
         
-        // Inicialización de la "antena" de datos
+        // Inicializar Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -36,23 +36,23 @@
     </div>
 
     <div class="central" id="home">
-        <div id="missatge">Conectando con el servidor...</div>
+        <div id="missatge">Conectando con la red...</div>
         <br>
-        <button type="button" id="btnJugar" onclick="aJugar();" hidden>¡ENTRAR A LA MESA!</button> 
+        <button type="button" id="btnJugar" onclick="aJugar();" hidden>¡ENTRAR A LA PARTIDA!</button> 
     </div>
 
     <div class="central" id="domino" hidden>
-        <div id="jugades"></div>
-        <br><br>
+        <div id="jugades" style="font-weight: bold; font-size: 20px; margin-bottom: 20px;"></div>
+        <br>
         <div id="dropZones">
-            <div id="dropEsq" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Poner Izquierda</div>
-            <div id="dropDreta" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)">Poner Derecha</div>
+            <div id="dropEsq" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)" style="border: 2px dashed #000; padding: 20px; display: inline-block;">Izquierda</div>
+            <div id="dropDreta" class="dropZone" ondrop="drop(event)" ondragover="allowDrop(event)" style="border: 2px dashed #000; padding: 20px; display: inline-block;">Derecha</div>
             <br><br>
-            <div id="torn">Esperando turno...</div>
-            <br><br>
+            <div id="torn" style="color: red; font-weight: bold;"></div>
+            <br>
         </div>
         
-        <div id="misPeces" style="min-height: 100px; border-top: 2px solid #ccc; padding-top: 10px;">
+        <div id="misPeces" style="border-top: 2px solid #ccc; padding: 20px;">
             <h3>Tus Fichas:</h3>
             <div id="contenedorFichas"></div>
         </div>
@@ -61,8 +61,9 @@
     </div>
 
     <br><br>
-    <div id="areaPuntuacion">
-        <button type="button" onclick="location.href='index.html'">SALIR DEL JUEGO</button>
+    <div class="centre">
+        <button type="button" onclick="location.href='index.html'">SALIR</button>
     </div>
 </body>
-</html>
+                    </html>
+            
