@@ -1,176 +1,106 @@
-var id = 0;
-var movimentAcertat;
-var peces = [];
-var pecesJugades = [];
+var miIdJugador = 0;
+var misFichas = [];
+var turnoActual = 0;
 
-function cridaAJAXJoc(url) {
-    let xhr = new XMLHttpRequest();
-
-    if (!xhr) {
-        alert('problemes amb XHR');
-        return false;
-    }
-    xhr.onreadystatechange = callbackAJAXJoc;
-    xhr.open('POST', url, true);
-    xhr.send(null);
-}
-
-function callbackAJAXJoc() {
-    if (xhr.readyState === XMLHttpRequest.DONE) {
-        if (xhr.status === 200) {
-            dada = JSON.parse(xhr.response);
-            mostrarJoc();
-        } else {
-            console.log('problemes amb l\'AJAX');
+// Esta función se llama desde main.js cuando le das a "Jugar"
+function iniciarPartidaEnMesa(id) {
+    miIdJugador = id;
+    
+    // Escuchar cambios en la partida (fichas en mesa, turnos, etc)
+    db.ref('partida').on('value', (snapshot) => {
+        const estado = snapshot.val();
+        if (estado) {
+            actualizarMesa(estado);
+            cargarMisFichas(estado);
         }
-    }
+    });
 }
 
-function mostrarJoc() {
-    var p = 3;
-    id = dada.id;
-    tornActual = dada.torn;
+function cargarMisFichas(estado) {
+    // Obtenemos las fichas que nos tocaron según nuestro ID
+    misFichas = estado['fichasJ' + miIdJugador] || [];
+    const contenedor = document.getElementById("contenedorFichas");
+    contenedor.innerHTML = ""; // Limpiar antes de dibujar
 
-    if (id == 1) {
-        peces = dada.peces1;
-    } else if (id == 2) {
-        peces = dada.peces2;
-    }
-
-    for (var i = 0; i < peces.length; i++) {
+    misFichas.forEach((ficha, index) => {
         var img = document.createElement('img');
-        img.id = peces[i];
-        img.height = 90;
-        img.width = 45;
+        img.src = `imatges/${ficha.replace(',', '')}.png`; // Ejemplo: "0,1" -> imatges/01.png
+        img.id = ficha;
+        img.className = "ficha-domino";
+        img.style.cursor = "pointer";
+        img.style.margin = "5px";
+        img.width = 50;
+        
+        // Habilitar arrastre
         img.draggable = true;
-        var srcImg = "/imatge?img=" + peces[i] + ".png";
-        img.src = srcImg;
-        img.className = "peca";
-        img.ondragstart = function (e) {
-            drag(e);
+        img.ondragstart = (ev) => {
+            ev.dataTransfer.setData("text", ev.target.id);
         };
-        document.getElementById('domino').appendChild(img);
-        console.log(peces[i]);
-    }
-
-    document.addEventListener("load", setInterval(function () {
-        if (tornActual != id) {
-            callbackAJAXcanviTorn('canviTorn=idJugador=' + id);
-            document.getElementById("torn").innerHTML = "<p>Es el torn del jugador " + tornActual + ". Espera al teu torn.</p>";
-        } else if (tornActual == id) {
-            document.getElementById("torn").innerHTML = "<p>Es el teu torn, jugador " + tornActual + ".</p>";
-        }
-    }, 3000));
+        
+        contenedor.appendChild(img);
+    });
 }
 
-function cridaAJAXJugada(url) {
-    let xhr = new XMLHttpRequest();
-    if (!xhr) {
-        alert('problemes amb XHR');
-        return false;
-    }
-    xhr.onreadystatechange = callbackAJAXjugada;
-    xhr.open('POST', url, true); // el 3r paràmetre indica que és asíncron
-    xhr.send(null);
-}
+function actualizarMesa(estado) {
+    turnoActual = estado.torn;
+    const divJugadas = document.getElementById("jugades");
+    const divTorn = document.getElementById("torn");
 
-function callbackAJAXjugada(){
-    if(xhr.readyState == 4){
-        if(xhr.status === 200){
-            data = JSON.parse(xhr.response);
-            mostrarJugada();
-        }else{
-            console.log('Problemes amb l\'AJAX');
-        }
+    // Mostrar las fichas que ya están en la mesa
+    divJugadas.innerText = "Mesa: " + (estado.mesa ? estado.mesa.join(" | ") : "Vacía");
+
+    // Mostrar de quién es el turno
+    if (turnoActual === miIdJugador) {
+        divTorn.innerText = "¡ES TU TURNO!";
+        divTorn.style.color = "green";
+    } else {
+        divTorn.innerText = "Turno del Jugador " + turnoActual;
+        divTorn.style.color = "red";
     }
 }
 
-/*Mètode que mostra quan jugadors tiren una fitxa*/
-function mostrarJugada(){
-    document.getElementById("jugades").innerText = "";
-    peca = dada.tirada;
-    id = dada.id;
-    movimentAcertat = dada.acertat;
-    pecesJugades = dada.pecesJugades;
-    tornActual = dada.torn;
-
-    for(var i=0; i<pecesJugades.length; i++){
-        var img = document.createElement('img');
-        img.id = pecesJugades[i];
-        img.height = 90;
-        img.width = 45;
-        img.draggable = false;
-        var srcImg = "/imatge?img=" + pecesJugades[i] + ".png";
-        img.src = srcImg;
-        img.className = "peca";
-        img.title = pecesJugades[i] + ": Jug" + id;
-        document.getElementById('jugades').appendChild(img);
-    }
-}
-
-/*Mètode que indica la zona on es dropejen les peces*/
-function allowDrop(ev){
-    if(tornActual == id){
-        ev.preventDefault();
-    }else{
-        return false;
-    }
-}
-
-/*Aquest mètode indica el que haurà de fer l'objecte quan s'arrossegui*/
-function drag(ev){
-    ev.dataTransfer.serData("peca", ev.target.id);
-}
-
-/*Aquest mètode indica que haurà de realitzar l'objecte quan es faci el drop*/
-function drop(ev){
+// Funciones para Arrastrar y Soltar (Drag & Drop)
+function allowDrop(ev) {
     ev.preventDefault();
-    var data = ev.dataTransfer.getData("peca");
-    document.getElementById(data).setAttribute("hidden",true);
-    var div = document.getElementById("pecesEsquerra");
-    pecaJugada = data;
-    cridaAJAXJugada('pecaJugada?idJugador=' + id + '&peca=' + pecaJugada + '&costat=' + ev.target.id + '&torn=' + tornActual);
 }
 
-/*Crida per a comprovar de qui es el torn*/
-function cridaAJAXCanviTorn(url){
-    let xhr = new XMLHttpRequest();
-    if(!xhr){
-        alert('Problemes amb XHR');
-        return false;
+function drop(ev) {
+    ev.preventDefault();
+    var fichaId = ev.dataTransfer.getData("text");
+    
+    if (turnoActual !== miIdJugador) {
+        alert("¡No es tu turno!");
+        return;
     }
-    xhr.onreadystatechange = 
-    xhr.open('POST',url,true);
-    xhr.send(null);
+
+    // Aquí enviamos la jugada a Firebase
+    registrarJugada(fichaId, ev.target.id); // ev.target.id es 'dropEsq' o 'dropDreta'
 }
 
-/*Callback per a comprovar de qui es el torn*/
-function callbackAJAXcanviTorn(){
-    if(xhr.readyState == 4){
-        if(xhr.status === 200){
-            dada = JSON.parse(xhr.response);
-            //canvi de torn
-        }else{
-            console.log('Problemes amb l\'AJAX');
+function registrarJugada(ficha, lado) {
+    const partidaRef = db.ref('partida');
+    
+    partidaRef.once('value').then((snapshot) => {
+        let estado = snapshot.val();
+        let mesa = estado.mesa || [];
+        let misNuevasFichas = misFichas.filter(f => f !== ficha);
+        
+        // Lógica simple: agregar a la mesa
+        if (lado === "dropEsq") {
+            mesa.unshift(ficha);
+        } else {
+            mesa.push(ficha);
         }
-    }
-}
 
-/*Mètode per a comprovar de qui es el torn*/
-function canviTorn(id,torn){
-    tornActual = dada.torn;
-    pecesJugades = dada.pecesJugades;
-    document.getElementById('jugades').innerText="";
-    for(var i=0; i < pecesJugades.length; i++){
-        var img = document.createElement('img');
-        img.id = pecesJugades[i];
-        img.height = 90;
-        img.width = 45;
-        img.draggable = false;
-        var srcImg = "/imatge?img=" + pecesJugades[i] + ".png";
-        img.src = srcImg;
-        img.className = "peca";
-        img.title = pecesJugades[i] + ": Jug" + id;
-        document.getElementById('jugades').appendChild(img);
-    }
+        // Calcular siguiente turno (1->2, 2->3, 3->4, 4->1)
+        let siguienteTurno = (miIdJugador % 4) + 1;
+
+        // Actualizar Firebase
+        let actualizaciones = {};
+        actualizaciones['mesa'] = mesa;
+        actualizaciones['torn'] = siguienteTurno;
+        actualizaciones['fichasJ' + miIdJugador] = misNuevasFichas;
+
+        partidaRef.update(actualizaciones);
+    });
 }
