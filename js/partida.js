@@ -1,43 +1,45 @@
-// --- CONFIGURACIÓN DE FIREBASE (Usa tus credenciales de siempre) ---
-// const db = firebase.database(); 
-
+// --- CONFIGURACIÓN Y ESTADO ---
+let modoJuego = new URLSearchParams(window.location.search).get('mode'); 
 let puntas = { izq: null, der: null };
 let miMano = [];
-let idPartida = new URLSearchParams(window.location.search).get('id');
-let miNombre = localStorage.getItem('domino_user');
+let turnoActual = 1; // 1: Usuario, 2: PC/Rival...
+let fichasRestantes = [];
 
-// --- 1. RECUPERAR SINCRONIZACIÓN (Lo que se había perdido) ---
-function conectarPartida() {
-    if (!idPartida) return console.error("No hay ID de partida");
+// --- 1. INICIALIZACIÓN SEGÚN TU AUDIO ---
+function iniciarPartidaEnMesa() {
+    let todas = [];
+    for (let i = 0; i <= 6; i++) {
+        for (let j = i; j <= 6; j++) todas.push(`${i}${j}`);
+    }
 
-    const refPartida = db.ref(`partidas/${idPartida}`);
-
-    // Escuchar cambios en la mesa (Sincronizado)
-    refPartida.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-
-        // Si el juego no ha empezado, esperamos jugadores (Como antes)
-        if (data.estado === 'esperando') {
-            document.getElementById('estado-texto').innerText = "Esperando jugadores...";
-            return;
-        }
-
-        // Actualizar puntas y mesa desde el servidor
-        puntas = data.puntas || { izq: null, der: null };
-        renderizarMesa(data.jugadas);
-        actualizarMano(data.jugadores[miNombre].mano);
-    });
+    if (modoJuego === 'pc' || modoJuego === '1vs1') {
+        repartir(todas, 7, 2); // 2 jugadores, 7 fichas c/u
+    } else if (modoJuego === '2vs2') {
+        repartir(todas, 7, 4); // Parejas
+    } else if (modoJuego === '3vs3') { // Tu modo de 3
+        todas = todas.filter(f => f !== "00"); // Quitamos doble blanco
+        repartir(todas, 9, 3); // 9 fichas c/u
+    }
 }
 
-// --- 2. LÓGICA DE JUGADA (INTELIGENTE Y AUTOMÁTICA) ---
+function repartir(mazo, cantidad, numJugadores) {
+    mazo.sort(() => Math.random() - 0.5);
+    miMano = mazo.slice(0, cantidad);
+    // En modo PC, asignamos a la máquina
+    if (modoJuego === 'pc') {
+        manoPC = mazo.slice(cantidad, cantidad * 2);
+        pozo = mazo.slice(cantidad * 2);
+    }
+    actualizarInterfazMano();
+}
+
+// --- 2. LÓGICA DE JUEGO (EL 4 CON EL 4) ---
 function intentarJugar(ficha) {
     const n1 = parseInt(ficha[0]);
     const n2 = parseInt(ficha[1]);
 
-    // Primer tiro de la partida
     if (puntas.izq === null) {
-        enviarMovimiento(ficha, 'der');
+        ejecutarMovimiento(ficha, 'der');
         return;
     }
 
@@ -45,66 +47,68 @@ function intentarJugar(ficha) {
     const puedeDer = (n1 === puntas.der || n2 === puntas.der);
 
     if (puedeIzq && puedeDer) {
-        // Pop-up solo si hay dos opciones
-        mostrarPopupOpciones(ficha);
+        mostrarDecision(ficha); // Tu pop-up si hay dos opciones
     } else if (puedeIzq) {
-        enviarMovimiento(ficha, 'izq');
+        ejecutarMovimiento(ficha, 'izq');
     } else if (puedeDer) {
-        enviarMovimiento(ficha, 'der');
-    } else {
-        alert("Esa ficha no cuadra.");
+        ejecutarMovimiento(ficha, 'der');
     }
 }
 
-// --- 3. VALIDACIÓN DE EMPALME (El 4 con el 4) ---
-function enviarMovimiento(ficha, lado) {
+function ejecutarMovimiento(ficha, lado) {
     const n1 = parseInt(ficha[0]);
     const n2 = parseInt(ficha[1]);
-    let nuevaPunta;
     let invertida = false;
 
-    if (lado === 'izq') {
-        if (n1 === puntas.izq) { nuevaPunta = n2; invertida = true; }
-        else { nuevaPunta = n1; invertida = false; }
+    if (puntas.izq === null) {
+        puntas.izq = n1; puntas.der = n2;
+    } else if (lado === 'izq') {
+        if (n1 === puntas.izq) { puntas.izq = n2; invertida = true; }
+        else { puntas.izq = n1; invertida = false; }
     } else {
-        if (n2 === puntas.der) { nuevaPunta = n1; invertida = true; }
-        else { nuevaPunta = n2; invertida = false; }
+        if (n2 === puntas.der) { puntas.der = n1; invertida = true; }
+        else { puntas.der = n2; invertida = false; }
     }
 
-    // ACTUALIZACIÓN EN FIREBASE (Sincroniza con todos)
-    const updates = {};
-    updates[`partidas/${idPartida}/puntas/${lado}`] = nuevaPunta;
-    // Aquí se enviaría el objeto de la jugada al servidor...
-    db.ref().update(updates);
+    dibujarFichaEnMesa(ficha, lado, invertida);
+    miMano = miMano.filter(f => f !== ficha);
+    
+    if (modoJuego === 'pc') {
+        turnoActual = 2;
+        setTimeout(iaPC, 1000);
+    }
+    actualizarInterfazMano();
 }
 
-// --- 4. VISUALIZACIÓN (Mesa de madera de tus fotos) ---
-function dibujarFicha(ficha, lado, invertida) {
+// --- 3. VISUALIZACIÓN (Mesa Marrón) ---
+function dibujarFichaEnMesa(ficha, lado, invertida) {
     const mesa = document.getElementById('jugades');
     const img = document.createElement('img');
     img.src = `imagen/${ficha}.png`;
-    img.style.width = "45px"; 
-
+    
     const esDoble = ficha[0] === ficha[1];
     let angulo = esDoble ? 0 : (invertida ? 270 : 90);
 
     img.style.transform = `rotate(${angulo}deg)`;
-    img.style.margin = esDoble ? "0 5px" : "0 12px";
+    img.style.margin = esDoble ? "0 5px" : "0 15px";
 
     if (lado === 'izq') mesa.insertBefore(img, mesa.firstChild);
     else mesa.appendChild(img);
 }
 
-// --- 5. SISTEMA DE POZO (Para no trancarse como en la foto) ---
-function robarFicha() {
-    db.ref(`partidas/${idPartida}/pozo`).transaction((pozo) => {
-        if (pozo && pozo.length > 0) {
-            const ficha = pozo.pop();
-            // Agregar a mi mano en Firebase...
-            return pozo;
-        }
-    });
+// Lógica de IA para modo PC
+function iaPC() {
+    const jugada = manoPC.find(f => f.includes(puntas.izq) || f.includes(puntas.der));
+    if (jugada) {
+        const lado = jugada.includes(puntas.der) ? 'der' : 'izq';
+        ejecutarMovimientoIA(jugada, lado);
+    } else if (pozo.length > 0) {
+        manoPC.push(pozo.pop());
+        setTimeout(iaPC, 500);
+    } else {
+        turnoActual = 1; // Pasa turno al jugador
+    }
 }
 
-// Inicializar al cargar
-window.onload = conectarPartida;
+window.onload = iniciarPartidaEnMesa;
+            
