@@ -3,143 +3,161 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Dominó Maracay - Motor Real</title>
+    <title>Dominó Maracay - Versión Final</title>
     <style>
-        body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        #header { background: #1c2833; padding: 10px; display: flex; justify-content: space-between; border-bottom: 3px solid #f1c40f; }
+        body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; overflow: hidden; }
         
-        /* LA MESA: Ahora es un contenedor que SI atrapa las fichas */
-        .mesa-verde { 
-            background: radial-gradient(circle, #2ecc71 0%, #1b5e20 100%);
-            border: 10px solid #4e342e; border-radius: 40px; 
-            width: 90vw; height: 50vh; margin: 15px auto;
-            position: relative; overflow: auto; /* Permite scroll si la cadena es larga */
+        #header { background: #1c2833; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid #f1c40f; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .marcador { color: #f1c40f; font-weight: bold; font-size: 1.2em; }
+
+        .mesa-tablero { 
+            background: radial-gradient(circle, #27ae60 0%, #145a32 100%);
+            border: 12px solid #3e2723; border-radius: 50px; 
+            width: 92vw; height: 55vh; margin: 20px auto;
+            position: relative; overflow: auto;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: inset 0 0 50px #000;
+            box-shadow: inset 0 0 60px #000;
         }
 
-        /* EL RIEL: Donde se alinean las fichas como en Dominoes 365 */
-        #jugades { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            white-space: nowrap; 
-            padding: 20px;
-            min-width: 100%;
+        /* Contenedor central donde se alinean las piezas */
+        #area-juego { 
+            display: flex; align-items: center; justify-content: center; 
+            min-width: 100%; padding: 40px;  white-space: nowrap;
         }
 
-        #jugades img { 
-            height: 90px; /* Tamaño grande para que se vean los puntos */
+        #area-juego img { 
+            height: 85px; /* Altura ideal para móviles */
             margin: 2px; 
-            filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.7)); 
+            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));
         }
 
-        .info-jugador { position: absolute; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 5px; border: 1px solid #f1c40f; z-index: 10; font-size: 12px; }
-        .pos-arriba { top: 5px; left: 50%; transform: translateX(-50%); }
-
-        #footer { position: fixed; bottom: 0; width: 100%; background: #000; padding: 10px 0; border-top: 3px solid #f1c40f; }
-        #contenedorFichas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-        .ficha-mano { width: 60px; cursor: pointer; }
-        #torn { text-align: center; color: #f1c40f; font-weight: bold; margin-bottom: 5px; }
+        #footer { position: fixed; bottom: 0; width: 100%; background: #111; padding: 15px 0; border-top: 4px solid #f1c40f; }
+        #mis-fichas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 10px; }
+        .ficha-jugador { width: 62px; cursor: pointer; transition: transform 0.2s; }
+        .ficha-jugador:active { transform: scale(0.9); }
+        
+        #indicador { text-align: center; color: #f1c40f; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .rival-info { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; border: 1px solid #f1c40f; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div>NOS: <span id="pts-nos" style="color:#f1c40f">0</span></div>
-        <div>ELLOS: <span id="pts-ell" style="color:#f1c40f">0</span></div>
+        <div class="marcador">NOS: <span id="puntos-nos">0</span></div>
+        <div style="font-weight: bold; color: #ecf0f1;">DOMINÓ MARACAY</div>
+        <div class="marcador">ELLOS: <span id="puntos-ell">0</span></div>
     </div>
 
-    <div class="info-jugador pos-arriba">RIVAL: <span id="cant-op">7</span> piezas</div>
-
-    <div class="mesa-verde">
-        <div id="jugades"></div>
+    <div class="mesa-tablero">
+        <div class="rival-info">RIVAL: <span id="count-pc">7</span> FICHAS</div>
+        <div id="area-juego"></div>
     </div>
 
     <div id="footer">
-        <div id="torn">TU TURNO</div>
-        <div id="contenedorFichas"></div>
+        <div id="indicador">Tu Turno</div>
+        <div id="mis-fichas"></div>
     </div>
 
     <script>
-        let puntas = { izq: null, der: null };
-        let manoYo = [];
+        let extremos = { izq: null, der: null };
+        let manoUsuario = [];
         let manoPC = [];
 
-        function getFichaImg(f) { return `imagen/ficha_${f[0]}_${f[1]}.png`; }
+        // CORRECCIÓN CLAVE: Ajuste a su nomenclatura 00.png, 01.png, etc.
+        function obtenerRuta(f) { 
+            return `imagen/${f[0]}${f[1]}.png`; 
+        }
 
         window.onload = () => {
-            let mazo = [];
-            for (let i=0; i<=6; i++) for (let j=i; j<=6; j++) mazo.push(`${i}${j}`);
-            mazo.sort(() => Math.random() - 0.5);
+            let piezas = [];
+            for (let i=0; i<=6; i++) {
+                for (let j=i; j<=6; j++) {
+                    piezas.push(`${i}${j}`);
+                }
+            }
+            piezas.sort(() => Math.random() - 0.5);
             
-            manoYo = mazo.slice(0, 7);
-            manoPC = mazo.slice(7, 14);
-            actualizarMano();
+            manoUsuario = piezas.slice(0, 7);
+            manoPC = piezas.slice(7, 14);
+            renderizarMano();
         };
 
-        function actualizarMano() {
-            const cont = document.getElementById('contenedorFichas');
-            cont.innerHTML = "";
-            manoYo.forEach(f => {
+        function renderizarMano() {
+            const contenedor = document.getElementById('mis-fichas');
+            contenedor.innerHTML = "";
+            manoUsuario.forEach(f => {
                 const img = document.createElement('img');
-                img.src = getFichaImg(f);
-                img.className = "ficha-mano";
-                img.onclick = () => intentarJugar(f, "yo");
-                cont.appendChild(img);
+                img.src = obtenerRuta(f);
+                img.className = "ficha-jugador";
+                img.onclick = () => procesarJugada(f, "usuario");
+                contenedor.appendChild(img);
             });
-            document.getElementById('cant-op').innerText = manoPC.length;
+            document.getElementById('count-pc').innerText = manoPC.length;
         }
 
-        function intentarJugar(f, autor) {
-            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
-            if (puntas.izq === null) ponerFicha(f, 'der', autor);
-            else if (n1 === puntas.izq || n2 === puntas.izq) ponerFicha(f, 'izq', autor);
-            else if (n1 === puntas.der || n2 === puntas.der) ponerFicha(f, 'der', autor);
-        }
-
-        function ponerFicha(f, lado, autor) {
-            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
-            let debeInvertir = false;
-
-            if (puntas.izq === null) {
-                puntas.izq = n1; puntas.der = n2;
-            } else if (lado === 'izq') {
-                if (n1 === puntas.izq) { puntas.izq = n2; debeInvertir = true; } 
-                else { puntas.izq = n1; }
-            } else {
-                if (n2 === puntas.der) { puntas.der = n1; debeInvertir = true; } 
-                else { puntas.der = n2; }
-            }
-
-            // CREAR LA IMAGEN Y METERLA AL RIEL
-            const img = document.createElement('img');
-            img.src = getFichaImg(f);
+        function procesarJugada(f, quien) {
+            const v1 = parseInt(f[0]), v2 = parseInt(f[1]);
             
-            // Rotación lógica: Si es doble va parada, si no, acostada
-            if (n1 !== n2) {
-                img.style.transform = debeInvertir ? "rotate(270deg)" : "rotate(90deg)";
+            if (extremos.izq === null) {
+                ejecutarColocacion(f, 'der', quien);
+            } else if (v1 === extremos.izq || v2 === extremos.izq) {
+                ejecutarColocacion(f, 'izq', quien);
+            } else if (v1 === extremos.der || v2 === extremos.der) {
+                ejecutarColocacion(f, 'der', quien);
+            }
+        }
+
+        function ejecutarColocacion(f, lado, quien) {
+            const v1 = parseInt(f[0]), v2 = parseInt(f[1]);
+            let rotar = false;
+
+            if (extremos.izq === null) {
+                extremos.izq = v1; extremos.der = v2;
+            } else if (lado === 'izq') {
+                if (v1 === extremos.izq) { extremos.izq = v2; rotar = true; } 
+                else { extremos.izq = v1; }
+            } else {
+                if (v2 === extremos.der) { extremos.der = v1; rotar = true; } 
+                else { extremos.der = v2; }
             }
 
-            const riel = document.getElementById('jugades');
-            if (lado === 'izq') riel.insertBefore(img, riel.firstChild);
-            else riel.appendChild(img);
+            const img = document.createElement('img');
+            img.src = obtenerRuta(f);
+            
+            // Lógica de rotación para que se vea como un juego real
+            if (v1 !== v2) {
+                img.style.transform = rotar ? "rotate(270deg)" : "rotate(90deg)";
+            }
 
-            if (autor === "yo") {
-                manoYo = manoYo.filter(x => x !== f);
-                setTimeout(turnoIA, 1000);
+            const tablero = document.getElementById('area-juego');
+            if (lado === 'izq') tablero.insertBefore(img, tablero.firstChild);
+            else tablero.appendChild(img);
+
+            if (quien === "usuario") {
+                manoUsuario = manoUsuario.filter(x => x !== f);
+                document.getElementById('indicador').innerText = "PC JUGANDO...";
+                setTimeout(logicaPC, 1200);
             } else {
                 manoPC = manoPC.filter(x => x !== f);
+                document.getElementById('indicador').innerText = "TU TURNO";
             }
-            actualizarMano();
+            renderizarMano();
+            
+            if (manoUsuario.length === 0) alert("¡Ganaste la partida!");
+            if (manoPC.length === 0) alert("La PC ha ganado.");
         }
 
-        function turnoIA() {
-            let fIA = manoPC.find(f => 
-                parseInt(f[0])===puntas.izq || parseInt(f[1])===puntas.izq || 
-                parseInt(f[0])===puntas.der || parseInt(f[1])===puntas.der
+        function logicaPC() {
+            let jugada = manoPC.find(f => 
+                parseInt(f[0]) === extremos.izq || parseInt(f[1]) === extremos.izq || 
+                parseInt(f[0]) === extremos.der || parseInt(f[1]) === extremos.der
             );
-            if (fIA) intentarJugar(fIA, "pc");
+            
+            if (jugada) {
+                procesarJugada(jugada, "pc");
+            } else {
+                document.getElementById('indicador').innerText = "PC PASA. TU TURNO";
+            }
         }
     </script>
 </body>
