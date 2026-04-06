@@ -1,41 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dominó Maracay - Mesa</title>
-    <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
-        .mesa { 
-            background: #27ae60; border: 12px solid #5d4037; border-radius: 25px;
-            height: 75vh; margin: 10px; position: relative; overflow: auto;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #jugades { display: flex; align-items: center; padding: 50px; }
-        #jugades img { height: 60px; margin: 2px; }
-        #contenedorFichas { 
-            position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.7);
-            padding: 15px; display: flex; justify-content: center; gap: 5px;
-        }
-        .ficha-mano { width: 50px; cursor: pointer; transition: 0.2s; }
-        .ficha-mano:hover { transform: translateY(-10px); }
-        #torn { position: absolute; top: 20px; width: 100%; text-align: center; font-weight: bold; font-size: 1.2em; text-shadow: 2px 2px 4px #000; }
-        #fichas-pc { position: absolute; top: 50px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Dominó Maracay - Pro</title>
+    <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-    <div id="torn">CARGANDO...</div>
-    <div id="fichas-pc">Oponente: --</div>
-    
-    <div class="mesa">
-        <div id="jugades"></div>
-    </div>
+    <div id="game-container">
+        <div id="header">
+            <div id="torn">ESPERANDO...</div>
+            <div id="puntos-info">Objetivo: <span id="meta-puntos">100</span></div>
+        </div>
 
-    <div id="contenedorFichas"></div>
+        <div class="board-wrapper">
+            <div id="board" class="mesa-verde">
+                <div id="jugades"></div>
+            </div>
+        </div>
+
+        <div id="player-hand-container">
+            <div id="contenedorFichas"></div>
+        </div>
+        
+        <div id="game-footer">
+            <div id="fichas-pc">Oponente: --</div>
+            <button id="btn-robar" style="display:none;" onclick="intentarRobar()">ROBAR</button>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="js/config.js"></script> 
+    <script src="js/config.js"></script>
     <script src="js/partida.js"></script>
 </body>
 </html>
