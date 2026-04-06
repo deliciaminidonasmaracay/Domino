@@ -1,49 +1,125 @@
-body { background: #1a252f; color: white; font-family: sans-serif; text-align: center; margin: 0; }
+/* 1. BASE Y FONDO */
+body { 
+    background: #0f172a; 
+    color: white; 
+    font-family: 'Segoe UI', sans-serif; 
+    margin: 0; 
+    overflow: hidden; /* Evita scroll innecesario en móviles */
+}
 
-/* Mesa de madera flexible */
+/* 2. DISTRIBUCIÓN DE LA MESA (4 LADOS) */
+#area-central {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60vh;
+    padding: 0 10px;
+}
+
 #jugades {
     background-color: #3e2723;
     background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
-    border: 5px solid #2d1b18;
-    border-radius: 15px;
-    min-height: 380px;
-    width: 95%;
-    margin: 10px auto;
+    border: 8px solid #2d1b18;
+    border-radius: 20px;
+    flex-grow: 1;
+    height: 90%;
+    margin: 0 15px;
     display: flex;
-    flex-wrap: wrap; /* Para que gire como serpiente */
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    padding: 20px;
-    gap: 10px;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+    gap: 5px;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.5);
+    position: relative;
 }
 
-/* Fichas en mesa: Pequeñas y con espacio para rotar */
-#jugades img {
-    width: 45px; /* Tamaño reducido según capturas */
-    height: auto;
-    transition: transform 0.2s;
-}
-
-/* UI superior del oponente */
-#zona-oponente {
-    background: #2c3e50;
+/* 3. ZONAS DE JUGADORES (NORTE, ESTE, OESTE) */
+#zona-superior {
+    height: 60px;
+    background: #1e293b;
     display: flex;
-    justify-content: space-around;
-    padding: 10px;
-    border-bottom: 2px solid #f1c40f;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 3px solid #f1c40f;
 }
 
-/* Contenedor de tu mano abajo */
-#contenedorFichas {
+.zona-lateral {
+    width: 50px;
+    height: 150px;
+    background: rgba(30, 41, 59, 0.7);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 4. MARCADORES Y TANTOS */
+.marcador, .marcador-propio {
+    font-weight: bold;
+    color: #f1c40f;
+    text-shadow: 1px 1px 2px black;
+}
+
+.puntos {
+    font-size: 1.5rem;
+    background: #0f172a;
+    padding: 2px 10px;
+    border-radius: 5px;
+    border: 1px solid #f1c40f;
+}
+
+/* 5. TU MANO (SUR) */
+#zona-inferior {
     position: fixed;
     bottom: 0;
     width: 100%;
-    background: #2c3e50;
-    padding: 15px;
+    background: #1e293b;
+    padding: 10px 0;
+    border-top: 4px solid #f1c40f;
+    z-index: 100;
+}
+
+#contenedorFichas {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    border-top: 3px solid #f1c40f;
+    gap: 5px;
+    margin-bottom: 5px;
 }
-.ficha-mano { width: 60px; cursor: pointer; }
+
+.ficha-mano {
+    width: 55px; /* Tamaño ideal para que quepan 9 fichas en pantalla */
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.ficha-mano:hover {
+    transform: translateY(-10px);
+}
+
+/* 6. ESTILO DE LAS FICHAS EN MESA */
+#jugades img {
+    width: 42px;
+    height: auto;
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5));
+}
+
+/* 7. MENÚ Y CONTROLES */
+.btn-salir {
+    background: #c0392b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#menu-flotante {
+    position: fixed;
+    top: 70px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
