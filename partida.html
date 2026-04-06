@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dominó Venezuela - Mesa</title>
+    <title>Mesa de Juego - Dominó Venezuela</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="pantallaJuego">
-        <h3 id="estadoModo" style="color: #f1c40f; margin: 5px;">MODO: VS PC</h3>
+        <h3 id="nombreOponente" style="color: #f1c40f; margin: 5px; text-transform: uppercase;">Oponente: Computador</h3>
         
         <div id="jugades">
             <div id="izq" class="dropZone">Punta Izq</div>
             <div id="der" class="dropZone">Punta Der</div>
         </div>
 
-        <div id="controles-accion" style="margin: 10px;">
+        <div id="zona-controles" style="margin: 10px;">
             <div id="torn" style="font-weight: bold; color: #ecf0f1; margin-bottom: 5px;">Tu Turno</div>
-            <button id="btnPasar" onclick="accionPasarORobar()" 
-                    style="background: #f39c12; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none;">
-                PASAR / ROBAR
+            <button id="btnAccion" onclick="gestionarPasoORobo()" 
+                    style="display:none; background:#f39c12; color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">
+                ROBAR FICHA
             </button>
         </div>
         
         <div id="contenedorFichas"></div>
 
         <button onclick="window.location.href='index.html'" 
-                style="background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin-top: 10px; cursor: pointer;">
+                style="background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin-top: 5px; cursor: pointer; font-size: 12px;">
             ABANDONAR MESA
         </button>
     </div>
