@@ -2,26 +2,24 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa de Juego - Domino Venezuela</title>
+    <title>Mesa de Juego - Dominó Venezuela</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
     <div id="domino">
-        <h2 id="mensajeRed">Conectando con la red...</h2>
+        <h2 id="estadoModo" style="color: #f1c40f; margin-top: 10px;">Cargando partida...</h2>
         
         <div id="jugades">
-            <div id="zonaIzquierda" class="dropZone">Izquierda</div>
-            <div id="zonaDerecha" class="dropZone">Derecha</div>
+            <div id="izq" class="dropZone">IZQ</div>
+            <div id="der" class="dropZone">DER</div>
         </div>
 
-        <div id="torn">Espera tu turno...</div>
+        <div id="torn" style="font-weight: bold; margin: 10px;">Esperando turno...</div>
 
         <div id="contenedorFichas">
             </div>
 
-        <button id="btnSalir" onclick="window.location.href='index.html'" style="margin-top: 20px; background: #c0392b;">SALIR</button>
+        <button onclick="window.location.href='index.html'" style="background: #c0392b; color: white; padding: 10px; border: none; border-radius: 5px; margin-top: 20px;">SALIR</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -31,17 +29,14 @@
     <script src="js/partida.js"></script>
 
     <script>
-        // Lógica para detectar modo PC y no quedarse pegado
-        const params = new URLSearchParams(window.location.search);
-        const modo = params.get('modo');
+        const urlParams = new URLSearchParams(window.location.search);
+        const modo = urlParams.get('modo');
 
         if (modo === 'PC') {
-            document.getElementById('mensajeRed').innerText = "MODO: Tú vs Computadora";
-            document.getElementById('mensajeRed').style.color = "#f1c40f";
-            // Aquí puedes llamar a una función de tu partida.js que inicie los bots
-            if (typeof iniciarBots === "function") {
-                iniciarBots();
-            }
+            document.getElementById('estadoModo').innerText = "MODO: Tú vs Computadora";
+            // Activa la lógica de IA en tu partida.js
+        } else {
+            document.getElementById('estadoModo').innerText = "MODO: Multijugador (" + modo + " Jugadores)";
         }
     </script>
 </body>
