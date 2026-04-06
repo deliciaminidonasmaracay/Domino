@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Código - Dominó</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
+        button { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        textarea { width: 100%; height: 300px; margin-top: 20px; background: #000; color: #0f0; font-family: monospace; border-radius: 5px; }
+        .instrucciones { background: #333; padding: 10px; border-radius: 5px; font-size: 0.9em; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <h2>Analizador de Modelos</h2>
+    <div class="instrucciones">
+        Introduce la URL del juego (ej: https://solitar.io/domino) para extraer su estructura y lógica.
+    </div>
+
+    <input type="text" id="urlPagina" placeholder="https://direccion-del-juego.com">
+    <button onclick="capturarCodigo()">EXTRAER CÓDIGO Y FUNCIONAMIENTO</button>
+
+    <h4 id="estado"></h4>
+    <textarea id="resultado" placeholder="El código aparecerá aquí..."></textarea>
+
+    <script>
+        async function capturarCodigo() {
+            const url = document.getElementById('urlPagina').value;
+            const estado = document.getElementById('estado');
+            const resultado = document.getElementById('resultado');
+
+            if (!url) {
+                alert("Por favor, mete una dirección");
+                return;
+            }
+
+            estado.innerText = "Capturando... por favor espera";
+            
+            // Usamos un proxy para saltar el bloqueo de CORS del celular
+            const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+
+            try {
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                // Limpiamos el código para que sea legible
+                let codigoLimpio = data.contents;
+                
+                // Buscamos scripts específicos de lógica de juego para mostrártelos primero
+                const scripts = codigoLimpio.match(/<script\b[^>]*>([\s\S]*?)<\/script>/g) || [];
+                
+                resultado.value = "--- ESTRUCTURA HTML Y SCRIPTS DETECTADOS ---\n\n" + 
+                                  "Total de Scripts encontrados: " + scripts.length + "\n\n" +
+                                  codigoLimpio;
+                
+                estado.innerText = "¡Captura completada!";
+                console.log("Código base extraído con éxito");
+
+            } catch (error) {
+                estado.innerText = "Error en la captura";
+                resultado.value = "Error: No se pudo acceder a la página. Intenta con otra URL o verifica que la dirección sea correcta.";
+            }
+        }
+    </script>
+</body>
+</html>
