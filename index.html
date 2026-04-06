@@ -3,119 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dominó Venezuela - Inicio</title>
-    <style>
-        body { 
-            background: #1a252f; 
-            color: white; 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-        }
-        .contenedor { 
-            background: #2c3e50; 
-            padding: 30px; 
-            border-radius: 15px; 
-            border: 2px solid #f1c40f; 
-            width: 90%; 
-            max-width: 400px; 
-            text-align: center; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        h1 { color: #f1c40f; text-shadow: 2px 2px 4px #000; margin-bottom: 25px; }
-        .grupo-botones button { 
-            background: #003366; 
-            color: white; 
-            border: 1px solid #f1c40f; 
-            padding: 15px; 
-            margin: 10px 0; 
-            width: 100%; 
-            border-radius: 8px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: 0.3s;
-        }
-        .grupo-botones button:hover { background: #f1c40f; color: #1a252f; }
-        
-        /* Pantalla de espera para Multijugador */
-        #ventanaEspera { 
-            display: none; 
-            background: rgba(0,0,0,0.7); 
-            padding: 20px; 
-            border-radius: 10px; 
-            border: 1px solid #27ae60; 
-        }
-        .contador { font-size: 45px; color: #f1c40f; font-weight: bold; margin: 15px 0; }
-    </style>
+    <title>Dominó Maracay - Menú</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="contenedor">
-        <div id="menuPrincipal">
-            <h1>DOMINÓ VENEZUELA</h1>
-            <div class="grupo-botones">
-                <button onclick="flujoEntrada('PC')">Vs Computadora</button>
-                <button onclick="flujoEntrada('2')">2 Jugadores</button>
-                <button onclick="flujoEntrada('3')">3 Jugadores</button>
-                <button onclick="flujoEntrada('4')">4 Jugadores</button>
-            </div>
-        </div>
-
-        <div id="ventanaEspera">
-            <h3 id="mensaje">Buscando jugadores...</h3>
-            <div class="contador" id="conteo">1 / --</div>
-            <p style="font-size: 12px;">Conectando a Realtime Database</p>
-            <button onclick="location.reload()" style="background:#c0392b; width:auto; padding:10px; font-size:14px; border:none; color:white; border-radius:5px;">CANCELAR</button>
+    <div id="modalRegistro" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; display:flex; justify-content:center; align-items:center;">
+        <div style="background:#2c3e50; padding:30px; border-radius:15px; border:2px solid #f1c40f; text-align:center; color:white; width:90%; max-width:400px;">
+            <h2 style="color:#f1c40f;">BIENVENIDO</h2>
+            <p style="margin:15px 0;">¿Cómo quieres jugar hoy?</p>
+            <input type="text" id="nombreUsuario" placeholder="Escribe tu nombre..." style="padding:12px; width:100%; border-radius:5px; border:none; margin-bottom:10px;">
+            <button onclick="gestionarEntrada(false)" style="background:#27ae60; color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer;">REGISTRARSE</button>
+            <hr style="margin:15px 0; opacity:0.3;">
+            <button onclick="gestionarEntrada(true)" style="background:#7f8c8d; color:white; border:none; padding:10px; width:100%; border-radius:5px; cursor:pointer;">JUGAR COMO ANÓNIMO</button>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <div id="menuPrincipal">
+        <h1>DOMINÓ MARACAY</h1>
+        <button onclick="window.location.href='partida.html'">JUGAR CONTRA PC</button>
+        <button disabled title="Próximamente">MULTIJUGADOR (Firebase)</button>
+    </div>
 
     <script>
-        // Tu URL de Firebase capturada
-        const firebaseConfig = { 
-            databaseURL: "https://dominovenezuela-2624b-default-rtdb.firebaseio.com/" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        function flujoEntrada(modo) {
-            document.getElementById('menuPrincipal').style.display = 'none';
-            document.getElementById('ventanaEspera').style.display = 'block';
-            
-            if(modo === 'PC') {
-                // MODO VS PC: Salto directo sin esperar red
-                document.getElementById('conteo').innerText = "1 / 1";
-                setTimeout(() => { 
-                    window.location.href = 'partida.html?modo=PC'; 
-                }, 1000);
+        function gestionarEntrada(esAnonimo) {
+            let nombre = "";
+            if (esAnonimo) {
+                const previo = localStorage.getItem('domino_user_name');
+                nombre = (previo && previo.includes("Anonimo")) ? previo : "Anonimo" + Math.floor(Math.random() * 1000);
             } else {
-                // MODO MULTIJUGADOR: Control de tráfico en Firebase
-                const salaRef = db.ref('espera/sala_' + modo);
-                
-                salaRef.transaction((actual) => {
-                    return (actual || 0) + 1;
-                }, (error, committed, snapshot) => {
-                    const totalconectados = snapshot.val();
-                    document.getElementById('conteo').innerText = totalconectados + " / " + modo;
-
-                    // Listener para detectar cuando entran los demás
-                    salaRef.on('value', (snap) => {
-                        const actuales = snap.val();
-                        document.getElementById('conteo').innerText = actuales + " / " + modo;
-
-                        if(actuales >= parseInt(modo)) {
-                            // Cuando la sala se llena, todos saltan a la mesa
-                            window.location.href = 'partida.html?modo=' + modo;
-                        }
-                    });
-                });
+                nombre = document.getElementById('nombreUsuario').value.trim();
+                if (!nombre) return alert("Escribe un nombre");
             }
+            localStorage.setItem('domino_user_name', nombre);
+            if (!localStorage.getItem('domino_user_id')) {
+                localStorage.setItem('domino_user_id', 'id_' + Date.now());
+            }
+            document.getElementById('modalRegistro').style.display = 'none';
         }
+
+        window.onload = () => {
+            if (localStorage.getItem('domino_user_name')) {
+                document.getElementById('modalRegistro').style.display = 'none';
+            }
+        };
     </script>
 </body>
 </html>
