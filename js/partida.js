@@ -91,4 +91,4 @@ function actualizarUI() {
 }
 
 window.onload = iniciarJuego;
-            
+                   
