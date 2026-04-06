@@ -3,95 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino Venezuela - Inicio</title>
+    <title>Dominó Venezuela - Inicio</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a252f 0%, #000000 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            text-align: center;
-        }
-        .contenedor-inicio {
-            background-color: rgba(44, 62, 80, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            border: 2px solid #f1c40f;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            width: 90%;
-            max-width: 400px;
-        }
-        h1 { color: #f1c40f; margin-bottom: 10px; text-shadow: 2px 2px 4px #000; }
-        p { margin-bottom: 20px; font-size: 1.1em; color: #ecf0f1; }
-        
-        .modo-selector { display: grid; gap: 12px; }
-        
-        button {
-            background-color: #003366;
-            color: white;
-            border: 1px solid #f1c40f;
-            padding: 15px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        button:hover { background-color: #f1c40f; color: #1a252f; }
-
-        .estado-espera {
-            background: #000;
-            border: 1px solid #27ae60;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: none;
-        }
-        .contador { font-size: 32px; color: #f1c40f; margin: 10px 0; }
+        body { background: #1a252f; color: white; font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .contenedor { background: #2c3e50; padding: 30px; border-radius: 15px; border: 2px solid #f1c40f; box-shadow: 0 0 20px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; }
+        h1 { color: #f1c40f; text-shadow: 2px 2px 4px #000; }
+        button { background: #003366; color: white; border: 1px solid #f1c40f; padding: 15px; margin: 10px 0; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #f1c40f; color: #1a252f; }
+        #ventanaEspera { display: none; background: #000; padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #27ae60; }
+        .contador { font-size: 30px; color: #f1c40f; font-weight: bold; margin: 10px 0; }
     </style>
 </head>
 <body>
-
-<div class="contenedor-inicio">
-    <h1>DOMINÓ VENEZUELA</h1>
-    <p>¿Cómo quieres jugar hoy?</p>
-
-    <div class="modo-selector" id="menuModos">
-        <button onclick="irAPartida('PC')">Vs Computadora</button>
-        <button onclick="irAPartida('2')">2 Jugadores</button>
-        <button onclick="irAPartida('3')">3 Jugadores</button>
-        <button onclick="irAPartida('4')">4 Jugadores</button>
+    <div class="contenedor">
+        <h1>DOMINÓ VENEZUELA</h1>
+        <div id="menuModos">
+            <button onclick="entrar('PC')">Vs Computadora</button>
+            <button onclick="entrar('2')">2 Jugadores</button>
+            <button onclick="entrar('3')">3 Jugadores</button>
+            <button onclick="entrar('4')">4 Jugadores</button>
+        </div>
+        <div id="ventanaEspera">
+            <h3>En espera de jugadores...</h3>
+            <div class="contador" id="conteo">1 / --</div>
+            <p id="infoRed">Conectando a Realtime Database...</p>
+            <button onclick="location.reload()" style="background:#c0392b; width:auto; padding:10px; font-size:14px;">Cancelar</button>
+        </div>
     </div>
-
-    <div id="ventanaEspera" class="estado-espera">
-        <h3 id="txtEstado">Conectando...</h3>
-        <div class="contador" id="numJugadores">1 / --</div>
-        <button onclick="location.reload()" style="background:#c0392b; font-size: 14px; padding: 10px;">Cancelar</button>
-    </div>
-</div>
-
-<script>
-    function irAPartida(modo) {
-        document.getElementById('menuModos').style.display = 'none';
-        document.getElementById('ventanaEspera').style.display = 'block';
-        
-        if(modo === 'PC') {
-            document.getElementById('txtEstado').innerText = "Iniciando IA...";
-            document.getElementById('numJugadores').innerText = "1 / 1";
-            // Redirigimos con el parámetro de modo PC
-            setTimeout(() => { window.location.href = 'partida.html?modo=PC'; }, 1500);
-        } else {
-            document.getElementById('txtEstado').innerText = "Esperando Jugadores...";
-            document.getElementById('numJugadores').innerText = "1 / " + modo;
-            // Redirigimos al modo multijugador
-            setTimeout(() => { window.location.href = 'partida.html?modo=' + modo; }, 2000);
+    <script>
+        function entrar(modo) {
+            document.getElementById('menuModos').style.display = 'none';
+            document.getElementById('ventanaEspera').style.display = 'block';
+            let meta = (modo === 'PC') ? '1' : modo;
+            document.getElementById('conteo').innerText = "1 / " + meta;
+            // Redirige a la partida con el modo seleccionado
+            setTimeout(() => { window.location.href = 'partida.html?modo=' + modo; }, 1500);
         }
-    }
-</script>
-
+    </script>
 </body>
 </html>
