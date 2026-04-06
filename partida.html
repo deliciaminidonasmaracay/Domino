@@ -3,169 +3,128 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Dominó Maracay Pro</title>
+    <title>Dominó Maracay - Final</title>
     <style>
         body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        /* Estilo de la mesa extraído de Dominoes 365 */
+        
+        /* CABECERA CON PUNTAJE */
+        #header { 
+            background: #2c3e50; padding: 10px 20px; display: flex; 
+            justify-content: space-between; align-items: center; border-bottom: 3px solid #f1c40f;
+        }
+        .marcador { font-size: 1.2em; font-weight: bold; }
+        .puntos { color: #f1c40f; }
+
+        /* MESA */
         .mesa-verde { 
             background: radial-gradient(circle, #27ae60 0%, #1e8449 100%);
             border: 10px solid #5d4037; border-radius: 40px; 
-            height: 60vh; margin: 15px; display: flex; align-items: center; 
-            justify-content: center; overflow: auto; box-shadow: inset 0 0 50px #000;
+            height: 55vh; margin: 10px; position: relative;
+            box-shadow: inset 0 0 50px #000; display: flex; align-items: center; justify-content: center;
         }
-        #jugades { display: flex; align-items: center; padding: 40px; min-width: 100%; }
-        #jugades img { height: 60px; margin: 2px; border-radius: 4px; box-shadow: 2px 2px 5px #000; }
+        #jugades { display: flex; align-items: center; justify-content: center; }
+        #jugades img { height: 70px; margin: 1px; border-radius: 4px; box-shadow: 2px 2px 5px #000; }
+
+        /* PIEDRAS DEL OPONENTE (Visual) */
+        #area-pc { padding: 5px; text-align: center; }
+        .ficha-oculta { width: 30px; height: 50px; background: #eee; border: 2px solid #999; border-radius: 4px; display: inline-block; margin: 2px; position: relative; }
+        .ficha-oculta::after { content: "•"; color: #333; font-size: 30px; position: absolute; top: 5px; left: 8px; }
+
+        /* CONTENEDOR DE JUGADOR Y BOTÓN */
+        #footer { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 10px 0; }
+        #contenedorFichas { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+        .ficha-mano { width: 55px; cursor: pointer; transition: 0.2s; }
         
-        /* Contenedor de tus fichas */
-        #contenedorFichas { 
-            background: rgba(0,0,0,0.7); padding: 15px; display: flex; 
-            justify-content: center; gap: 5px; flex-wrap: wrap; 
-            position: fixed; bottom: 0; width: 100%; min-height: 80px;
+        #btn-accion { 
+            display: none; background: #e67e22; color: white; border: none; 
+            padding: 10px 30px; border-radius: 5px; font-weight: bold; margin: 0 auto 10px auto;
         }
-        .ficha-mano { width: 45px; cursor: pointer; transition: 0.2s; }
-        .ficha-mano:active { transform: scale(1.2) translateY(-10px); }
         
-        #torn { padding: 15px; text-align: center; font-size: 1.2em; color: #f1c40f; font-weight: bold; }
-        #info-pc { position: absolute; top: 60px; right: 25px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; font-size: 0.8em; }
+        #torn { text-align: center; font-size: 1.1em; color: #f1c40f; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="torn">TU TURNO</div>
-    <div id="info-pc">PC: --</div>
+    <div id="header">
+        <div class="marcador">TÚ: <span id="pts-yo" class="puntos">0</span></div>
+        <div id="torn">CARGANDO...</div>
+        <div class="marcador">PC: <span id="pts-pc" class="puntos">0</span></div>
+    </div>
+
+    <div id="area-pc">
+        <div id="visual-pc"></div> </div>
     
     <div class="mesa-verde">
         <div id="jugades"></div>
     </div>
 
-    <div id="contenedorFichas"></div>
+    <div id="footer">
+        <button id="btn-accion" onclick="accionMazo()"></button>
+        <div id="contenedorFichas"></div>
+    </div>
 
     <script>
         let puntas = { izq: null, der: null };
         let miMano = [], manoPC = [], pozo = [];
+        let puntosYo = 0, puntosPC = 0;
 
-        // Función para adaptar a tus nombres de archivo: ficha_X_Y.png
-        function getFichaImg(f) {
-            return `imagen/ficha_${f[0]}_${f[1]}.png`;
-        }
+        function getFichaImg(f) { return `imagen/ficha_${f[0]}_${f[1]}.png`; }
 
         function iniciar() {
             let mazo = [];
-            for (let i=0; i<=6; i++) {
-                for (let j=i; j<=6; j++) mazo.push(`${i}${j}`);
-            }
-            // Mezclar
+            for (let i=0; i<=6; i++) for (let j=i; j<=6; j++) mazo.push(`${i}${j}`);
             mazo.sort(() => Math.random() - 0.5);
             
-            // Reparto estándar 7 y 7
             miMano = mazo.slice(0, 7);
             manoPC = mazo.slice(7, 14);
             pozo = mazo.slice(14);
             
-            renderMano();
-            document.getElementById('info-pc').innerText = `PC: ${manoPC.length}`;
+            actualizarInterfaz();
+            verificarBloqueoUsuario();
         }
 
-        function renderMano() {
+        function actualizarInterfaz() {
+            // Dibujar mi mano
             const cont = document.getElementById('contenedorFichas');
             cont.innerHTML = "";
             miMano.forEach(f => {
                 const img = document.createElement('img');
                 img.src = getFichaImg(f);
                 img.className = "ficha-mano";
-                img.onclick = () => intentarJugar(f);
+                img.onclick = () => jugar(f, "YO");
                 cont.appendChild(img);
             });
-        }
 
-        function intentarJugar(f) {
-            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
+            // Dibujar piedras oponente (visual)
+            const visPC = document.getElementById('visual-pc');
+            visPC.innerHTML = "";
+            manoPC.forEach(() => {
+                const div = document.createElement('div');
+                div.className = "ficha-oculta";
+                visPC.appendChild(div);
+            });
             
-            // Lógica de validación de puntas
-            if (puntas.izq === null) {
-                ponerFicha(f, 'der');
-            } else if (n1 === puntas.izq || n2 === puntas.izq) {
-                ponerFicha(f, 'izq');
-            } else if (n1 === puntas.der || n2 === puntas.der) {
-                ponerFicha(f, 'der');
-            } else {
-                alert("Esa ficha no entra en las puntas!");
-            }
-        }
-
-        function ponerFicha(f, lado) {
-            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
-            let inv = false;
-
-            if (puntas.izq === null) {
-                puntas.izq = n1; puntas.der = n2;
-            } else if (lado === 'izq') {
-                if (n1 === puntas.izq) { puntas.izq = n2; inv = true; } else { puntas.izq = n1; }
-            } else {
-                if (n2 === puntas.der) { puntas.der = n1; inv = true; } else { puntas.der = n2; }
-            }
-
-            // Dibujar en tablero
-            const mesa = document.getElementById('jugades');
-            const img = document.createElement('img');
-            img.src = getFichaImg(f);
-            
-            // Rotación profesional (si es doble queda parada, si no, acostada)
-            const esDoble = n1 === n2;
-            img.style.transform = `rotate(${esDoble ? 0 : (inv ? 270 : 90)}deg)`;
-
-            if (lado === 'izq') mesa.insertBefore(img, mesa.firstChild);
-            else mesa.appendChild(img);
-
-            // Actualizar mano del jugador
-            miMano = miMano.filter(x => x !== f);
-            renderMano();
-
-            // Turno de la PC
-            document.getElementById('torn').innerText = "PC PENSANDO...";
-            setTimeout(turnoIA, 1200);
-        }
-
-        function turnoIA() {
-            let fIA = manoPC.find(f => 
-                parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq ||
-                parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der
-            );
-
-            if (fIA) {
-                let lado = (parseInt(fIA[0]) === puntas.der || parseInt(fIA[1]) === puntas.der) ? 'der' : 'izq';
-                manoPC = manoPC.filter(x => x !== fIA);
-                // Lógica de dibujo para la IA
-                ponerFichaIA(fIA, lado);
-            } else if (pozo.length > 0) {
-                manoPC.push(pozo.pop());
-                document.getElementById('info-pc').innerText = `PC: ${manoPC.length} (Robó)`;
-                setTimeout(turnoIA, 500);
-            } else {
-                document.getElementById('torn').innerText = "PC PASÓ. TU TURNO";
-            }
-        }
-
-        function ponerFichaIA(f, lado) {
-            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
-            let inv = false;
-            if (lado === 'izq') {
-                if (n1 === puntas.izq) { puntas.izq = n2; inv = true; } else { puntas.izq = n1; }
-            } else {
-                if (n2 === puntas.der) { puntas.der = n1; inv = true; } else { puntas.der = n2; }
-            }
-            const mesa = document.getElementById('jugades');
-            const img = document.createElement('img');
-            img.src = getFichaImg(f);
-            img.style.transform = `rotate(${n1 === n2 ? 0 : (inv ? 270 : 90)}deg)`;
-            if (lado === 'izq') mesa.insertBefore(img, mesa.firstChild);
-            else mesa.appendChild(img);
-            
-            document.getElementById('info-pc').innerText = `PC: ${manoPC.length}`;
             document.getElementById('torn').innerText = "TU TURNO";
         }
 
-        iniciar();
-    </script>
-</body>
-</html>
+        function jugar(f, autor) {
+            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
+            let lado = null;
+
+            if (puntas.izq === null) lado = 'der';
+            else if (n1 === puntas.izq || n2 === puntas.izq) lado = 'izq';
+            else if (n1 === puntas.der || n2 === puntas.der) lado = 'der';
+
+            if (lado) {
+                ejecutar(f, lado, autor);
+            }
+        }
+
+        function ejecutar(f, lado, autor) {
+            const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
+            let inv = false;
+
+            if (puntas.izq === null) { puntas.izq = n1; puntas.der = n2; }
+            else if (lado === 'izq') {
+                if (n1 === puntas.izq) { puntas.izq = n2; inv = true; } else { puntas.izq
+        
