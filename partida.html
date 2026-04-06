@@ -3,150 +3,196 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Dominó Maracay Pro</title>
+    <title>Dominó Maracay - Mesa Profesional</title>
     <style>
-        body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        #header { background: #2c3e50; padding: 10px; display: flex; justify-content: space-between; border-bottom: 2px solid #f1c40f; }
+        body { background: #1a1a1a; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
+        
+        /* MARCADOR SUPERIOR */
+        #header { background: #2c3e50; padding: 10px; display: flex; justify-content: space-between; border-bottom: 3px solid #f1c40f; }
+        .pts { color: #f1c40f; font-weight: bold; font-size: 1.2em; }
+
+        /* MESA DE JUEGO (LAYOUT DE 4) */
+        .contenedor-mesa { position: relative; width: 100vw; height: 65vh; display: flex; align-items: center; justify-content: center; }
+        
         .mesa-verde { 
             background: radial-gradient(circle, #27ae60 0%, #1e8449 100%);
-            border: 10px solid #5d4037; border-radius: 40px; 
-            height: 50vh; margin: 15px; position: relative;
-            box-shadow: inset 0 0 50px #000; overflow: auto;
+            border: 12px solid #5d4037; border-radius: 50px; 
+            width: 90%; height: 85%; position: relative;
+            box-shadow: inset 0 0 50px #000; overflow: hidden;
         }
-        /* CONTENEDOR DE LA CADENA */
-        #jugades { position: absolute; width: 2000px; height: 100%; top: 0; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; }
-        #jugades img { position: absolute; height: 70px; transition: all 0.3s; }
 
-        #footer { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 10px 0; }
-        #contenedorFichas { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
-        .ficha-mano { width: 50px; cursor: pointer; }
-        #btn-accion { display: none; background: #e67e22; color: white; border: none; padding: 10px; border-radius: 5px; margin: 5px auto; }
-        #torn { text-align: center; color: #f1c40f; font-weight: bold; }
+        /* POSICIONES DE LOS JUGADORES (PIEDRAS VISIBLES) */
+        .info-jugador { position: absolute; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 10px; text-align: center; font-size: 0.8em; z-index: 10; }
+        .pos-arriba { top: 10px; left: 50%; transform: translateX(-50%); }
+        .pos-derecha { right: 10px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .pos-izquierda { left: 10px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+        
+        .pintas-oponente { display: flex; gap: 2px; margin-top: 3px; }
+        .pinta-back { width: 10px; height: 18px; background: #ddd; border: 1px solid #999; border-radius: 2px; }
+
+        /* EL TABLERO DE FICHAS JUGADAS */
+        #jugades { display: flex; align-items: center; justify-content: center; height: 100%; transition: transform 0.3s; }
+        #jugades img { height: 75px; margin: 1px; filter: drop-shadow(2px 2px 3px #000); }
+
+        /* TU MANO Y ACCIONES */
+        #footer { position: fixed; bottom: 0; width: 100%; background: #000; padding: 10px 0; border-top: 2px solid #333; }
+        #contenedorFichas { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+        .ficha-mano { width: 55px; cursor: pointer; transition: 0.2s; }
+        .ficha-mano:active { transform: scale(1.2); }
+        
+        #btn-accion { display: none; background: #d35400; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-bottom: 10px; }
+        #torn { text-align: center; color: #f1c40f; font-weight: bold; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div>TÚ: <span id="pts-yo">0</span></div>
-        <div id="torn">TU TURNO</div>
-        <div>PC: <span id="pts-pc">0</span></div>
+        <div>NOSOTROS: <span id="pts-nos" class="pts">0</span></div>
+        <div id="status">PARTIDA NUEVA</div>
+        <div>ELLOS: <span id="pts-ell" class="pts">0</span></div>
     </div>
-    
-    <div class="mesa-verde">
-        <div id="jugades"></div>
+
+    <div class="contenedor-mesa">
+        <div class="info-jugador pos-arriba">Compañero<div id="v-op2" class="pintas-oponente"></div></div>
+        
+        <div class="info-jugador pos-izquierda">Oponente 1<div id="v-op1" class="pintas-oponente"></div></div>
+
+        <div class="mesa-verde">
+            <div id="jugades"></div>
+        </div>
+
+        <div class="info-jugador pos-derecha">Oponente 2<div id="v-op3" class="pintas-oponente"></div></div>
     </div>
 
     <div id="footer">
+        <div id="torn">TU TURNO</div>
         <center><button id="btn-accion" onclick="accionMazo()"></button></center>
         <div id="contenedorFichas"></div>
     </div>
 
     <script>
         let puntas = { izq: null, der: null };
-        let posIzq = 0, posDer = 0; // Para controlar el desplazamiento real
-        let miMano = [], manoPC = [], pozo = [];
-
+        let manos = { yo: [], op1: [], op2: [], op3: [], pozo: [] };
+        
         function getFichaImg(f) { return `imagen/ficha_${f[0]}_${f[1]}.png`; }
 
         window.onload = () => {
             let mazo = [];
             for (let i=0; i<=6; i++) for (let j=i; j<=6; j++) mazo.push(`${i}${j}`);
             mazo.sort(() => Math.random() - 0.5);
-            miMano = mazo.slice(0, 7);
-            manoPC = mazo.slice(7, 14);
-            pozo = mazo.slice(14);
+            
+            // Reparto para 4 jugadores (7 cada uno)
+            manos.yo = mazo.slice(0, 7);
+            manos.op1 = mazo.slice(7, 14);
+            manos.op2 = mazo.slice(14, 21);
+            manos.op3 = mazo.slice(21, 28);
+            
             actualizarUI();
         };
 
         function actualizarUI() {
+            // Tu mano
             const cont = document.getElementById('contenedorFichas');
             cont.innerHTML = "";
-            miMano.forEach(f => {
+            manos.yo.forEach(f => {
                 const img = document.createElement('img');
                 img.src = getFichaImg(f);
                 img.className = "ficha-mano";
-                img.onclick = () => intentarJugar(f, "YO");
+                img.onclick = () => intentarJugar(f, "yo");
                 cont.appendChild(img);
             });
+
+            // Actualizar visual de oponentes (conteo de piedras)
+            renderPiedras('v-op1', manos.op1.length);
+            renderPiedras('v-op2', manos.op2.length);
+            renderPiedras('v-op3', manos.op3.length);
+            
             verificarBloqueo();
+        }
+
+        function renderPiedras(id, cant) {
+            const div = document.getElementById(id);
+            div.innerHTML = "";
+            for(let i=0; i<cant; i++) {
+                const p = document.createElement('div');
+                p.className = "pinta-back";
+                div.appendChild(p);
+            }
         }
 
         function intentarJugar(f, autor) {
             const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
-            if (puntas.izq === null) ejecutar(f, 'der', autor);
-            else if (n1 === puntas.izq || n2 === puntas.izq) ejecutar(f, 'izq', autor);
-            else if (n1 === puntas.der || n2 === puntas.der) ejecutar(f, 'der', autor);
+            if (puntas.izq === null) poner(f, 'der', autor);
+            else if (n1 === puntas.izq || n2 === puntas.izq) poner(f, 'izq', autor);
+            else if (n1 === puntas.der || n2 === puntas.der) poner(f, 'der', autor);
         }
 
-        function ejecutar(f, lado, autor) {
+        function poner(f, lado, autor) {
             const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
             let inv = false;
-            
-            // Lógica de Puntas
-            if (puntas.izq === null) {
-                puntas.izq = n1; puntas.der = n2;
-            } else if (lado === 'izq') {
+
+            if (puntas.izq === null) { puntas.izq = n1; puntas.der = n2; }
+            else if (lado === 'izq') {
                 if (n1 === puntas.izq) { puntas.izq = n2; inv = true; } else { puntas.izq = n1; }
             } else {
                 if (n2 === puntas.der) { puntas.der = n1; inv = true; } else { puntas.der = n2; }
             }
 
-            // DIBUJO CON POSICIONAMIENTO MATEMÁTICO
-            const mesa = document.getElementById('jugades');
             const img = document.createElement('img');
             img.src = getFichaImg(f);
+            img.style.transform = `rotate(${n1===n2 ? 0 : (inv ? 270 : 90)}deg)`;
             
-            const esDoble = n1 === n2;
-            const anchoFicha = esDoble ? 40 : 75; // Aproximación visual
+            const mesa = document.getElementById('jugades');
+            if (lado === 'izq') mesa.insertBefore(img, mesa.firstChild); else mesa.appendChild(img);
 
-            if (puntas.izq === n1 && puntas.der === n2 && posIzq === 0) { // Primera ficha
-                img.style.left = "50%";
-                img.style.transform = `translateX(-50%) rotate(${esDoble ? 0 : 90}deg)`;
-                posIzq = -anchoFicha/2;
-                posDer = anchoFicha/2;
-            } else if (lado === 'izq') {
-                posIzq -= anchoFicha;
-                img.style.left = `calc(50% + ${posIzq}px)`;
-                img.style.transform = `rotate(${esDoble ? 0 : (inv ? 270 : 90)}deg)`;
+            manos[autor] = manos[autor].filter(x => x !== f);
+            
+            // Ciclo de turnos (Yo -> OP1 -> Compañero -> OP3)
+            let sig = { "yo":"op1", "op1":"op2", "op2":"op3", "op3":"yo" };
+            let proximo = sig[autor];
+
+            actualizarUI();
+            if(manos[autor].length === 0) { alert("¡DOMINÓ! Ganó " + autor); location.reload(); return; }
+
+            if (proximo !== "yo") {
+                document.getElementById('torn').innerText = "Turno de " + proximo;
+                setTimeout(() => turnoIA(proximo), 1200);
             } else {
-                img.style.left = `calc(50% + ${posDer}px)`;
-                img.style.transform = `rotate(${esDoble ? 0 : (inv ? 270 : 90)}deg)`;
-                posDer += anchoFicha;
-            }
-
-            mesa.appendChild(img);
-
-            if (autor === "YO") {
-                miMano = miMano.filter(x => x !== f);
-                document.getElementById('torn').innerText = "PC PENSANDO...";
-                setTimeout(iaTurno, 1000);
-            } else {
-                manoPC = manoPC.filter(x => x !== f);
                 document.getElementById('torn').innerText = "TU TURNO";
+            }
+        }
+
+        function turnoIA(quien) {
+            let fIA = manos[quien].find(f => 
+                parseInt(f[0])===puntas.izq || parseInt(f[1])===puntas.izq || 
+                parseInt(f[0])===puntas.der || parseInt(f[1])===puntas.der
+            );
+            
+            if (fIA) intentarJugar(fIA, quien);
+            else {
+                document.getElementById('torn').innerText = quien + " PASÓ";
+                let sig = { "yo":"op1", "op1":"op2", "op2":"op3", "op3":"yo" };
+                let proximo = sig[quien];
+                if(proximo !== "yo") setTimeout(() => turnoIA(proximo), 1000);
+                else { document.getElementById('torn').innerText = "TU TURNO"; verificarBloqueo(); }
             }
             actualizarUI();
         }
 
-        function iaTurno() {
-            let fIA = manoPC.find(f => parseInt(f[0])===puntas.izq || parseInt(f[1])===puntas.izq || parseInt(f[0])===puntas.der || parseInt(f[1])===puntas.der);
-            if (fIA) intentarJugar(fIA, "PC");
-            else if (pozo.length > 0) { manoPC.push(pozo.pop()); setTimeout(iaTurno, 500); }
-            else { document.getElementById('torn').innerText = "PC PASÓ. TU TURNO"; verificarBloqueo(); }
-        }
-
         function verificarBloqueo() {
-            const puede = miMano.some(f => puntas.izq === null || parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq || parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der);
+            const puede = manos.yo.some(f => puntas.izq === null || parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq || parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der);
             const btn = document.getElementById('btn-accion');
             if (!puede) {
                 btn.style.display = "block";
-                btn.innerText = pozo.length > 0 ? "ROBAR" : "PASAR";
+                btn.innerText = "PASAR TURNO";
             } else btn.style.display = "none";
         }
 
         function accionMazo() {
-            if (pozo.length > 0) { miMano.push(pozo.pop()); actualizarUI(); }
-            else { document.getElementById('btn-accion').style.display = "none"; iaTurno(); }
+            document.getElementById('btn-accion').style.display = "none";
+            turnoIA("op1");
         }
     </script>
 </body>
-</html>
+            </html>
+    
