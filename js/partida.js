@@ -1,94 +1,154 @@
-let extremos = { izq: null, der: null };
-let esPrimerTiro = true;
+// VARIABLES DE CONTROL (Basadas en tus capturas)
+let puntas = { izq: null, der: null };
 let miMano = [];
 let manoPC = [];
-let pozo = [];
 
 function iniciarJuego() {
-    const todas = ["00","01","02","03","04","05","06","11","12","13","14","15","16","22","23","24","25","26","33","34","35","36","44","45","46","55","56","66"];
-    const mazo = todas.sort(() => Math.random() - 0.5);
+    // Generar y repartir (Lógica estándar)
+    const mazo = [];
+    for (let i = 0; i <= 6; i++) {
+        for (let j = i; j <= 6; j++) mazo.push(`${i}${j}`);
+    }
+    mazo.sort(() => Math.random() - 0.5);
     
     miMano = mazo.slice(0, 7);
     manoPC = mazo.slice(7, 14);
-    pozo = mazo.slice(14);
-
-    actualizarUI();
+    renderizarMano();
 }
 
-function crearFichaMesa(ficha, invertida) {
+// 1. EL JUGADOR SELECCIONA UNA FICHA
+function seleccionarFicha(ficha) {
+    const n1 = parseInt(ficha[0]);
+    const n2 = parseInt(ficha[1]);
+
+    // Caso A: Es la primera ficha
+    if (puntas.izq === null) {
+        realizarJugada(ficha, 'der');
+        return;
+    }
+
+    // Caso B: Verificamos por dónde puede entrar
+    const puedeIzq = (n1 === puntas.izq || n2 === puntas.izq);
+    const puedeDer = (n1 === puntas.der || n2 === puntas.der);
+
+    if (puedeIzq && puedeDer) {
+        // SI TIENE DOS OPCIONES: Pop-up para decidir (Como pediste)
+        pedirDecision(ficha);
+    } else if (puedeIzq) {
+        realizarJugada(ficha, 'izq');
+    } else if (puedeDer) {
+        realizarJugada(ficha, 'der');
+    } else {
+        alert("Esa ficha no camina. No coincide con las puntas.");
+    }
+}
+
+// 2. LÓGICA DE EMPALME (Para que 4 toque con 4)
+function realizarJugada(ficha, lado) {
+    const n1 = parseInt(ficha[0]);
+    const n2 = parseInt(ficha[1]);
+    let invertida = false;
+
+    if (puntas.izq === null) {
+        puntas.izq = n1; puntas.der = n2;
+    } else if (lado === 'izq') {
+        // Si el n1 es el que coincide, invertimos para que el n2 sea la nueva punta
+        if (n1 === puntas.izq) { puntas.izq = n2; invertida = true; }
+        else { puntas.izq = n1; invertida = false; }
+    } else {
+        // Si el n2 es el que coincide, invertimos para que el n1 sea la nueva punta
+        if (n2 === puntas.der) { puntas.der = n1; invertida = true; }
+        else { puntas.der = n2; invertida = false; }
+    }
+
+    dibujarEnMesa(ficha, lado, invertida);
+    miMano = miMano.filter(f => f !== ficha);
+    renderizarMano();
+    setTimeout(turnoPC, 1000);
+}
+
+// 3. DIBUJO VISUAL (Respetando la orientación de tus capturas)
+function dibujarEnMesa(ficha, lado, invertida) {
+    const mesa = document.getElementById('jugades');
     const img = document.createElement('img');
     img.src = `imagen/${ficha}.png`;
     
+    // Tamaño pequeño para que no se amontonen (Captura 22:42)
+    img.style.width = "45px"; 
+    
     const esDoble = ficha[0] === ficha[1];
     
-    if (esDoble) {
-        // Dobles van verticales
-        img.style.transform = invertida ? "rotate(180deg)" : "rotate(0deg)";
-    } else {
-        // Normales se acuestan 90 grados (orientación real)
-        img.style.transform = invertida ? "rotate(270deg)" : "rotate(90deg)";
-        img.style.margin = "0 15px"; // Espacio para la rotación
+    // Lógica de rotación real:
+    // Dobles: Verticales (0deg). Normales: Horizontales (90deg o 270deg)
+    let angulo = 0;
+    if (!esDoble) {
+        angulo = invertida ? 270 : 90;
     }
-    return img;
+
+    img.style.transform = `rotate(${angulo}deg)`;
+    img.style.margin = esDoble ? "0 5px" : "0 15px"; // Espacio para que se vea la unión
+    
+    if (lado === 'izq') {
+        mesa.insertBefore(img, mesa.firstChild);
+    } else {
+        mesa.appendChild(img);
+    }
 }
 
-function aplicarJugada(ficha, lado, esJugador) {
-    const n1 = parseInt(ficha[0]);
-    const n2 = parseInt(ficha[1]);
-    const mesa = document.getElementById('jugades');
-    let invertida = false;
-
-    if (esPrimerTiro) {
-        extremos.izq = n1; extremos.der = n2;
-        mesa.appendChild(crearFichaMesa(ficha, false));
-        esPrimerTiro = false;
-    } else if (lado === 'izq') {
-        if (n1 === extremos.izq) { invertida = true; extremos.izq = n2; }
-        else { extremos.izq = n1; }
-        mesa.insertBefore(crearFichaMesa(ficha, invertida), mesa.firstChild);
-    } else {
-        if (n2 === extremos.der) { invertida = true; extremos.der = n1; }
-        else { extremos.der = n2; }
-        mesa.appendChild(crearFichaMesa(ficha, invertida));
-    }
-
-    if (esJugador) {
-        miMano = miMano.filter(f => f !== ficha);
-        setTimeout(turnoPC, 1000);
-    } else {
-        manoPC = manoPC.filter(f => f !== ficha);
-    }
-    actualizarUI();
+// 4. POP-UP DE DECISIÓN (Solo cuando hay dos opciones)
+function pedirDecision(ficha) {
+    const contenedor = document.createElement('div');
+    contenedor.style = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#2c3e50; padding:20px; border:2px solid #f1c40f; z-index:2000; text-align:center; color:white; border-radius:10px;";
+    contenedor.innerHTML = `
+        <p>¿Dónde quieres jugar la ficha ${ficha[0]}-${ficha[1]}?</p>
+        <button onclick="confirmar('${ficha}', 'izq')" style="background:green; color:white; padding:10px; margin:5px; border:none; cursor:pointer;">IZQUIERDA</button>
+        <button onclick="confirmar('${ficha}', 'der')" style="background:blue; color:white; padding:10px; margin:5px; border:none; cursor:pointer;">DERECHA</button>
+    `;
+    contenedor.id = "p-decision";
+    document.body.appendChild(contenedor);
 }
 
+function confirmar(ficha, lado) {
+    document.getElementById('p-decision').remove();
+    realizarJugada(ficha, lado);
+}
+
+// 5. TURNO DE LA PC (Automático y con lógica)
 function turnoPC() {
-    let jugada = manoPC.find(f => f.includes(extremos.izq) || f.includes(extremos.der));
-    if (jugada) {
-        let lado = jugada.includes(extremos.izq) ? 'izq' : 'der';
-        aplicarJugada(jugada, lado, false);
-    } else if (pozo.length > 0) {
-        manoPC.push(pozo.shift());
-        turnoPC();
-    } else {
-        alert("PC PASA");
+    // Busca una ficha que coincida con punta izq o der
+    const fichaPC = manoPC.find(f => f.includes(puntas.izq) || f.includes(puntas.der));
+    
+    if (fichaPC) {
+        const lado = fichaPC.includes(puntas.izq) ? 'izq' : 'der';
+        // Aplicamos la misma lógica de inversión que el jugador
+        const n1 = parseInt(fichaPC[0]);
+        const n2 = parseInt(fichaPC[1]);
+        let invPC = false;
+
+        if (lado === 'izq') {
+            if (n1 === puntas.izq) { puntas.izq = n2; invPC = true; }
+            else { puntas.izq = n1; invPC = false; }
+        } else {
+            if (n2 === puntas.der) { puntas.der = n1; invPC = true; }
+            else { puntas.der = n2; invPC = false; }
+        }
+
+        dibujarEnMesa(fichaPC, lado, invPC);
+        manoPC = manoPC.filter(f => f !== fichaPC);
     }
 }
 
-function actualizarUI() {
-    const contMano = document.getElementById('contenedorFichas');
-    contMano.innerHTML = "";
+function renderizarMano() {
+    const divMano = document.getElementById('contenedorFichas');
+    divMano.innerHTML = "";
     miMano.forEach(f => {
         const img = document.createElement('img');
         img.src = `imagen/${f}.png`;
         img.className = "ficha-mano";
-        img.onclick = () => {
-            if (esPrimerTiro) aplicarJugada(f, 'der', true);
-            else if (f.includes(extremos.izq)) aplicarJugada(f, 'izq', true);
-            else if (f.includes(extremos.der)) aplicarJugada(f, 'der', true);
-        };
-        contMano.appendChild(img);
+        img.onclick = () => seleccionarFicha(f);
+        divMano.appendChild(img);
     });
 }
 
 window.onload = iniciarJuego;
-                   
+    
