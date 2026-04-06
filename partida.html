@@ -2,19 +2,23 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mesa de Juego - Dominó Venezuela</title>
+    <title>Dominó Venezuela - Mesa</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="domino">
-        <h2 id="estadoModo" style="color: #f1c40f; margin: 10px;">Cargando...</h2>
+    <div id="pantallaJuego">
+        <h2 id="estadoModo" style="color: #f1c40f; text-shadow: 2px 2px #000;">CONECTANDO...</h2>
+        
         <div id="jugades">
-            <div id="izq" class="dropZone">IZQ</div>
-            <div id="der" class="dropZone">DER</div>
+            <div id="izq" class="dropZone">Punta Izq</div>
+            <div id="der" class="dropZone">Punta Der</div>
         </div>
-        <div id="torn" style="font-weight: bold; margin: 10px;">Esperando turno...</div>
+
+        <div id="torn" style="margin: 15px; font-weight: bold;">Tu Turno</div>
+
         <div id="contenedorFichas"></div>
-        <button onclick="window.location.href='index.html'" style="background: #c0392b; color: white; padding: 10px; border-radius: 5px; border: none; margin-top: 20px;">SALIR</button>
+
+        <button onclick="window.location.href='index.html'" style="background:#c0392b; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">ABANDONAR MESA</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
