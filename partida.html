@@ -7,37 +7,18 @@
 </head>
 <body>
     <div id="domino">
-        <h2 id="estadoModo" style="color: #f1c40f; margin-top: 10px;">Cargando partida...</h2>
-        
+        <h2 id="estadoModo" style="color: #f1c40f; margin: 10px;">Cargando...</h2>
         <div id="jugades">
             <div id="izq" class="dropZone">IZQ</div>
             <div id="der" class="dropZone">DER</div>
         </div>
-
         <div id="torn" style="font-weight: bold; margin: 10px;">Esperando turno...</div>
-
-        <div id="contenedorFichas">
-            </div>
-
-        <button onclick="window.location.href='index.html'" style="background: #c0392b; color: white; padding: 10px; border: none; border-radius: 5px; margin-top: 20px;">SALIR</button>
+        <div id="contenedorFichas"></div>
+        <button onclick="window.location.href='index.html'" style="background: #c0392b; color: white; padding: 10px; border-radius: 5px; border: none; margin-top: 20px;">SALIR</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    
-    <script src="js/main.js"></script>
     <script src="js/partida.js"></script>
-
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const modo = urlParams.get('modo');
-
-        if (modo === 'PC') {
-            document.getElementById('estadoModo').innerText = "MODO: Tú vs Computadora";
-            // Activa la lógica de IA en tu partida.js
-        } else {
-            document.getElementById('estadoModo').innerText = "MODO: Multijugador (" + modo + " Jugadores)";
-        }
-    </script>
 </body>
 </html>
