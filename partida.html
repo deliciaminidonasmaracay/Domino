@@ -3,161 +3,188 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Dominó Maracay - Versión Final</title>
+    <title>Dominó Maracay Pro</title>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; overflow: hidden; }
+        :root { --oro: #f1c40f; --madera: #3e2723; }
+        body { background: #0e0e0e; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
         
-        #header { background: #1c2833; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid #f1c40f; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .marcador { color: #f1c40f; font-weight: bold; font-size: 1.2em; }
+        /* HEADER */
+        #header { background: #1c2833; padding: 12px; display: flex; justify-content: space-between; border-bottom: 3px solid var(--oro); }
+        .marcador { color: var(--oro); font-weight: bold; font-size: 1.1em; }
 
-        .mesa-tablero { 
+        /* TABLERO */
+        .mesa { 
             background: radial-gradient(circle, #27ae60 0%, #145a32 100%);
-            border: 12px solid #3e2723; border-radius: 50px; 
-            width: 92vw; height: 55vh; margin: 20px auto;
-            position: relative; overflow: auto;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: inset 0 0 60px #000;
+            border: 10px solid var(--madera); border-radius: 40px; 
+            width: 90vw; height: 50vh; margin: 10px auto;
+            position: relative; overflow: auto; display: flex; align-items: center;
         }
+        #area-juego { display: flex; align-items: center; justify-content: center; min-width: 100%; padding: 50px; }
+        #area-juego img { height: 75px; width: auto; margin: 2px; filter: drop-shadow(3px 3px 3px rgba(0,0,0,0.5)); }
 
-        /* Contenedor central donde se alinean las piezas */
-        #area-juego { 
-            display: flex; align-items: center; justify-content: center; 
-            min-width: 100%; padding: 40px;  white-space: nowrap;
-        }
+        /* CONTROLES */
+        #footer { position: fixed; bottom: 0; width: 100%; background: #111; border-top: 3px solid var(--oro); padding-bottom: 10px; }
+        #status { text-align: center; color: var(--oro); padding: 8px; font-weight: bold; font-size: 0.9em; height: 20px; }
+        #mis-fichas { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; min-height: 80px; }
+        .ficha-jugador { width: 55px; height: auto; cursor: pointer; border-radius: 4px; }
 
-        #area-juego img { 
-            height: 85px; /* Altura ideal para móviles */
-            margin: 2px; 
-            filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.6));
-        }
-
-        #footer { position: fixed; bottom: 0; width: 100%; background: #111; padding: 15px 0; border-top: 4px solid #f1c40f; }
-        #mis-fichas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 10px; }
-        .ficha-jugador { width: 62px; cursor: pointer; transition: transform 0.2s; }
-        .ficha-jugador:active { transform: scale(0.9); }
+        /* BOTONES DE ACCIÓN */
+        .controles-accion { display: flex; justify-content: center; padding: 10px; gap: 10px; }
+        .btn { background: var(--oro); color: #000; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; display: none; }
         
-        #indicador { text-align: center; color: #f1c40f; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .rival-info { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; border: 1px solid #f1c40f; font-size: 0.9em; }
+        .rival-box { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 15px; font-size: 0.8em; border: 1px solid var(--oro); }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div class="marcador">NOS: <span id="puntos-nos">0</span></div>
-        <div style="font-weight: bold; color: #ecf0f1;">DOMINÓ MARACAY</div>
-        <div class="marcador">ELLOS: <span id="puntos-ell">0</span></div>
+        <div class="marcador">NOS: <span id="pts-nos">0</span></div>
+        <div id="modo-actual">1 VS PC</div>
+        <div class="marcador">ELLOS: <span id="pts-ell">0</span></div>
     </div>
 
-    <div class="mesa-tablero">
-        <div class="rival-info">RIVAL: <span id="count-pc">7</span> FICHAS</div>
+    <div class="mesa">
+        <div class="rival-box">RIVAL: <span id="pc-count">7</span> | MAZO: <span id="mazo-count">14</span></div>
         <div id="area-juego"></div>
     </div>
 
     <div id="footer">
-        <div id="indicador">Tu Turno</div>
+        <div id="status">TU TURNO</div>
+        <div class="controles-accion">
+            <button id="btn-robar" class="btn" onclick="robarFicha()">ROBAR FICHA</button>
+            <button id="btn-pasar" class="btn" onclick="pasarTurno()">PASAR TURNO</button>
+        </div>
         <div id="mis-fichas"></div>
     </div>
 
     <script>
-        let extremos = { izq: null, der: null };
-        let manoUsuario = [];
-        let manoPC = [];
+        let puntas = { izq: null, der: null };
+        let manos = { yo: [], pc: [], mazo: [] };
 
-        // CORRECCIÓN CLAVE: Ajuste a su nomenclatura 00.png, 01.png, etc.
-        function obtenerRuta(f) { 
-            return `imagen/${f[0]}${f[1]}.png`; 
-        }
+        function imgPath(f) { return `imagen/${f[0]}${f[1]}.png`; }
 
         window.onload = () => {
-            let piezas = [];
-            for (let i=0; i<=6; i++) {
-                for (let j=i; j<=6; j++) {
-                    piezas.push(`${i}${j}`);
-                }
-            }
-            piezas.sort(() => Math.random() - 0.5);
+            let deck = [];
+            for (let i=0; i<=6; i++) for (let j=i; j<=6; j++) deck.push(`${i}${j}`);
+            deck.sort(() => Math.random() - 0.5);
             
-            manoUsuario = piezas.slice(0, 7);
-            manoPC = piezas.slice(7, 14);
-            renderizarMano();
+            manos.yo = deck.slice(0, 7);
+            manos.pc = deck.slice(7, 14);
+            manos.mazo = deck.slice(14);
+            actualizarInterfaz();
         };
 
-        function renderizarMano() {
+        function actualizarInterfaz() {
             const contenedor = document.getElementById('mis-fichas');
             contenedor.innerHTML = "";
-            manoUsuario.forEach(f => {
+            manos.yo.forEach(f => {
                 const img = document.createElement('img');
-                img.src = obtenerRuta(f);
+                img.src = imgPath(f);
                 img.className = "ficha-jugador";
-                img.onclick = () => procesarJugada(f, "usuario");
+                img.onclick = () => intentarJugar(f, "yo");
                 contenedor.appendChild(img);
             });
-            document.getElementById('count-pc').innerText = manoPC.length;
+
+            document.getElementById('pc-count').innerText = manos.pc.length;
+            document.getElementById('mazo-count').innerText = manos.mazo.length;
+            verificarOpciones();
         }
 
-        function procesarJugada(f, quien) {
+        function intentarJugar(f, autor) {
             const v1 = parseInt(f[0]), v2 = parseInt(f[1]);
-            
-            if (extremos.izq === null) {
-                ejecutarColocacion(f, 'der', quien);
-            } else if (v1 === extremos.izq || v2 === extremos.izq) {
-                ejecutarColocacion(f, 'izq', quien);
-            } else if (v1 === extremos.der || v2 === extremos.der) {
-                ejecutarColocacion(f, 'der', quien);
-            }
+            if (puntas.izq === null) poner(f, 'der', autor);
+            else if (v1 === puntas.izq || v2 === puntas.izq) poner(f, 'izq', autor);
+            else if (v1 === puntas.der || v2 === puntas.der) poner(f, 'der', autor);
         }
 
-        function ejecutarColocacion(f, lado, quien) {
+        function poner(f, lado, autor) {
             const v1 = parseInt(f[0]), v2 = parseInt(f[1]);
-            let rotar = false;
+            let inv = false;
 
-            if (extremos.izq === null) {
-                extremos.izq = v1; extremos.der = v2;
+            if (puntas.izq === null) {
+                puntas.izq = v1; puntas.der = v2;
             } else if (lado === 'izq') {
-                if (v1 === extremos.izq) { extremos.izq = v2; rotar = true; } 
-                else { extremos.izq = v1; }
+                if (v1 === puntas.izq) { puntas.izq = v2; inv = true; } else { puntas.izq = v1; }
             } else {
-                if (v2 === extremos.der) { extremos.der = v1; rotar = true; } 
-                else { extremos.der = v2; }
+                if (v2 === puntas.der) { puntas.der = v1; inv = true; } else { puntas.der = v2; }
             }
 
             const img = document.createElement('img');
-            img.src = obtenerRuta(f);
+            img.src = imgPath(f);
             
-            // Lógica de rotación para que se vea como un juego real
+            // Lógica de rotación visual para evitar desproporción
             if (v1 !== v2) {
-                img.style.transform = rotar ? "rotate(270deg)" : "rotate(90deg)";
+                img.style.transform = inv ? "rotate(270deg)" : "rotate(90deg)";
             }
 
             const tablero = document.getElementById('area-juego');
             if (lado === 'izq') tablero.insertBefore(img, tablero.firstChild);
             else tablero.appendChild(img);
 
-            if (quien === "usuario") {
-                manoUsuario = manoUsuario.filter(x => x !== f);
-                document.getElementById('indicador').innerText = "PC JUGANDO...";
-                setTimeout(logicaPC, 1200);
-            } else {
-                manoPC = manoPC.filter(x => x !== f);
-                document.getElementById('indicador').innerText = "TU TURNO";
+            manos[autor] = manos[autor].filter(x => x !== f);
+            actualizarInterfaz();
+
+            if (manos[autor].length === 0) { alert("Dominó!"); location.reload(); return; }
+
+            if (autor === "yo") {
+                document.getElementById('status').innerText = "PC ESTÁ PENSANDO...";
+                setTimeout(turnoIA, 1200);
             }
-            renderizarMano();
-            
-            if (manoUsuario.length === 0) alert("¡Ganaste la partida!");
-            if (manoPC.length === 0) alert("La PC ha ganado.");
         }
 
-        function logicaPC() {
-            let jugada = manoPC.find(f => 
-                parseInt(f[0]) === extremos.izq || parseInt(f[1]) === extremos.izq || 
-                parseInt(f[0]) === extremos.der || parseInt(f[1]) === extremos.der
+        function turnoIA() {
+            let fichaIA = manos.pc.find(f => 
+                parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq || 
+                parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der
             );
-            
-            if (jugada) {
-                procesarJugada(jugada, "pc");
+
+            if (fichaIA) {
+                intentarJugar(fichaIA, "pc");
+                document.getElementById('status').innerText = "TU TURNO";
+            } else if (manos.mazo.length > 0) {
+                manos.pc.push(manos.mazo.pop());
+                actualizarInterfaz();
+                setTimeout(turnoIA, 500);
             } else {
-                document.getElementById('indicador').innerText = "PC PASA. TU TURNO";
+                document.getElementById('status').innerText = "PC PASÓ. TU TURNO";
             }
+        }
+
+        function verificarOpciones() {
+            const puedeJugar = manos.yo.some(f => 
+                puntas.izq === null || 
+                parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq || 
+                parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der
+            );
+
+            const btnR = document.getElementById('btn-robar');
+            const btnP = document.getElementById('btn-pasar');
+
+            if (!puedeJugar) {
+                if (manos.mazo.length > 0) {
+                    btnR.style.display = "block";
+                    btnP.style.display = "none";
+                } else {
+                    btnR.style.display = "none";
+                    btnP.style.display = "block";
+                }
+            } else {
+                btnR.style.display = "none";
+                btnP.style.display = "none";
+            }
+        }
+
+        function robarFicha() {
+            if (manos.mazo.length > 0) {
+                manos.yo.push(manos.mazo.pop());
+                actualizarInterfaz();
+            }
+        }
+
+        function pasarTurno() {
+            document.getElementById('btn-pasar').style.display = "none";
+            document.getElementById('status').innerText = "PASASTE TURNO. PC JUEGA...";
+            setTimeout(turnoIA, 1000);
         }
     </script>
 </body>
