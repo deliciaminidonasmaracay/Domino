@@ -3,35 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extractor Profesional - Dominó</title>
+    <title>Extractor con Descarga - Dominó</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: white; margin: 0; }
         .container { max-width: 600px; margin: auto; }
         input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; }
         button { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1em; }
         .btn-extraer { background: #27ae60; color: white; }
-        .btn-descargar { background: #2980b9; color: white; display: none; } /* Oculto hasta que haya datos */
+        .btn-descargar { background: #2980b9; color: white; display: none; } /* Solo aparece al terminar */
         textarea { width: 100%; height: 250px; background: #000; color: #0f0; font-family: monospace; border-radius: 5px; padding: 10px; box-sizing: border-box; }
-        #estado { color: #f1c40f; text-align: center; margin: 10px 0; }
+        #estado { color: #f1c40f; text-align: center; margin: 10px 0; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Analizador de Modelos</h2>
-    <p style="font-size: 0.8em; color: #aaa;">Extrae el código completo y descárgalo para enviármelo sin errores.</p>
+    <p style="font-size: 0.8em; color: #aaa;">Introduce la URL para extraer el código y descargarlo en un archivo.</p>
 
-    <input type="text" id="urlPagina" placeholder="https://solitar.io/domino" value="https://solitar.io/domino">
+    <input type="text" id="urlPagina" placeholder="https://www.solitar.io/domino" value="https://www.solitar.io/domino">
     
-    <button class="btn-extraer" onclick="capturarCodigo()">1. EXTRAER TODO EL CÓDIGO</button>
-    <button id="btnDescargar" class="btn-descargar" onclick="descargarArchivo()">2. DESCARGAR ARCHIVO (.TXT)</button>
+    <button class="btn-extraer" onclick="capturarCodigo()">1. EXTRAER CÓDIGO</button>
+    <button id="btnDescargar" class="btn-descargar" onclick="descargarArchivo()">2. DESCARGAR ARCHIVO .TXT</button>
 
     <div id="estado"></div>
     <textarea id="resultado" readonly placeholder="El código aparecerá aquí..."></textarea>
 </div>
 
 <script>
-    let contenidoGlobal = "";
+    let contenidoParaDescargar = "";
 
     async function capturarCodigo() {
         const url = document.getElementById('urlPagina').value;
@@ -39,41 +39,41 @@
         const resultado = document.getElementById('resultado');
         const btnD = document.getElementById('btnDescargar');
 
-        if (!url) return alert("Pon la URL");
+        if (!url) return alert("Por favor, ingresa una URL válida");
 
-        estado.innerText = "⏳ Extrayendo datos de la página...";
+        estado.innerText = "⏳ Extrayendo... esto puede tardar unos segundos.";
+        btnD.style.display = "none";
         
-        // Proxy para saltar el CORS
         const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
 
         try {
             const response = await fetch(proxyUrl);
             const data = await response.json();
             
-            contenidoGlobal = data.contents;
-            resultado.value = contenidoGlobal;
+            contenidoParaDescargar = data.contents;
+            resultado.value = contenidoParaDescargar;
             
-            estado.innerText = "✅ ¡Listo! Ya puedes descargar el archivo.";
-            btnD.style.display = "block"; // Mostramos el botón de descarga
+            estado.innerText = "✅ ¡Extracción exitosa!";
+            btnD.style.display = "block"; // Aquí aparece el botón azul
 
         } catch (error) {
-            estado.innerText = "❌ Error al conectar";
-            resultado.value = "Intenta con otra URL o revisa tu conexión.";
+            estado.innerText = "❌ Error al conectar con la página.";
+            resultado.value = "Error: El servidor bloqueó la petición o la URL es inválida.";
         }
     }
 
     function descargarArchivo() {
-        if (!contenidoGlobal) return;
+        if (!contenidoParaDescargar) return;
         
-        const blob = new Blob([contenidoGlobal], { type: "text/plain" });
+        const blob = new Blob([contenidoParaDescargar], { type: "text/plain" });
         const urlDescarga = URL.createObjectURL(blob);
         const a = document.createElement("a");
         
-        // Nombre del archivo basado en la fecha para que no te confundas
-        const nombreArchivo = "codigo_extraido_" + new Date().getTime() + ".txt";
-        
+        // Nombre del archivo con la fecha actual
+        const fecha = new Date().toISOString().slice(0,10);
         a.href = urlDescarga;
-        a.download = nombreArchivo;
+        a.download = `codigo_domino_${fecha}.txt`;
+        
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
