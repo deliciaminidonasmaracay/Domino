@@ -1,102 +1,140 @@
 const urlParams = new URLSearchParams(window.location.search);
 const modoActual = urlParams.get('modo');
-const firebaseConfig = { databaseURL: "https://dominovenezuela-2624b-default-rtdb.firebaseio.com/" };
-
-if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-const db = firebase.database();
 
 let extremos = { izq: null, der: null };
 let esPrimerTiro = true;
+let manoPC = []; // Fichas de la computadora
+let miMano = []; // Tus fichas
+let pila = [];   // Fichas restantes para robar
 
 function iniciar() {
-    const txt = document.getElementById('estadoModo');
-    if(modoActual === 'PC') {
-        txt.innerText = "JUGANDO CONTRA LA PC";
-        repartirLocal();
-    } else {
-        txt.innerText = "MODO MULTIJUGADOR";
-    }
+    const todas = ["00","01","02","03","04","05","06","11","12","13","14","15","16","22","23","24","25","26","33","34","35","36","44","45","46","55","56","66"];
+    const mazo = todas.sort(() => Math.random() - 0.5);
+    
+    miMano = mazo.slice(0, 7);
+    manoPC = mazo.slice(7, 14);
+    pila = mazo.slice(14); // El resto queda en la pila
+
+    repartirManoUsuario();
 }
 
-function repartirLocal() {
+function repartirManoUsuario() {
     const contenedor = document.getElementById('contenedorFichas');
     contenedor.innerHTML = "";
-    // Ejemplo de mano inicial
-    const miMano = ["00", "11", "22", "33", "44", "55", "66"];
-    
-    miMano.forEach(f => {
+    let tieneJugada = false;
+
+    miMano.forEach((f, index) => {
         let img = document.createElement('img');
         img.src = "imagen/" + f + ".png"; 
         img.className = "ficha-domino";
-        img.onclick = () => procesarJugada(f, img);
+        
+        // Verificar si el usuario tiene al menos una jugada válida
+        if (esPrimerTiro || f.includes(extremos.izq) || f.includes(extremos.der)) {
+            tieneJugada = true;
+        }
+
+        img.onclick = () => procesarJugada(f, img, true);
         contenedor.appendChild(img);
     });
+
+    // Si no tienes jugada, mostramos el botón de Pasar/Robar
+    document.getElementById('btnPasar').style.display = tieneJugada ? "none" : "inline-block";
 }
 
-function procesarJugada(ficha, elemento) {
+function procesarJugada(ficha, elemento, esUsuario) {
     const n1 = parseInt(ficha[0]);
     const n2 = parseInt(ficha[1]);
     const mesa = document.getElementById('jugades');
 
     if (esPrimerTiro) {
-        mesa.innerHTML = ""; // Limpia las etiquetas "Punta Izq/Der"
-        extremos.izq = n1;
-        extremos.der = n2;
-        agregarAMesa(elemento.cloneNode(), 'centro');
-        finalizarTurno(elemento);
+        mesa.innerHTML = "";
+        extremos.izq = n1; extremos.der = n2;
+        colocarEnPantalla(elemento.cloneNode(), 'centro', false);
+        finalizarMovimiento(ficha, elemento, esUsuario);
         esPrimerTiro = false;
         return;
     }
 
-    // Lógica de validación de puntas
     let puedeIzq = (n1 === extremos.izq || n2 === extremos.izq);
     let puedeDer = (n1 === extremos.der || n2 === extremos.der);
 
     if (puedeIzq && !puedeDer) {
-        colocar(ficha, 'izq', elemento);
+        ejecutarColocacion(ficha, 'izq', elemento, esUsuario);
     } else if (!puedeIzq && puedeDer) {
-        colocar(ficha, 'der', elemento);
+        ejecutarColocacion(ficha, 'der', elemento, esUsuario);
     } else if (puedeIzq && puedeDer) {
-        let lado = confirm("¿Colocar a la IZQUIERDA? (Cancelar para DERECHA)") ? 'izq' : 'der';
-        colocar(ficha, lado, elemento);
-    } else {
-        alert("Esa ficha no calza en las puntas.");
+        if (esUsuario) {
+            let lado = confirm("¿IZQUIERDA (Aceptar) o DERECHA (Cancelar)?") ? 'izq' : 'der';
+            ejecutarColocacion(ficha, lado, elemento, esUsuario);
+        } else {
+            ejecutarColocacion(ficha, 'izq', elemento, esUsuario); // PC elige izq por defecto
+        }
     }
 }
 
-function colocar(ficha, lado, elemento) {
-    const n1 = parseInt(ficha[0]);
-    const n2 = parseInt(ficha[1]);
+function ejecutarColocacion(ficha, lado, elemento, esUsuario) {
+    const n1 = parseInt(ficha[0]); const n2 = parseInt(ficha[1]);
     let nuevoNodo = elemento.cloneNode();
-
+    
     if (lado === 'izq') {
-        if (n1 === extremos.izq) {
-            nuevoNodo.style.transform = "rotate(180deg)";
-            extremos.izq = n2;
-        } else {
-            extremos.izq = n1;
-        }
+        if (n1 === extremos.izq) { nuevoNodo.style.transform = "rotate(180deg)"; extremos.izq = n2; }
+        else { extremos.izq = n1; }
         document.getElementById('jugades').insertBefore(nuevoNodo, document.getElementById('jugades').firstChild);
     } else {
-        if (n2 === extremos.der) {
-            nuevoNodo.style.transform = "rotate(180deg)";
-            extremos.der = n1;
-        } else {
-            extremos.der = n2;
-        }
+        if (n2 === extremos.der) { nuevoNodo.style.transform = "rotate(180deg)"; extremos.der = n1; }
+        else { extremos.der = n2; }
         document.getElementById('jugades').appendChild(nuevoNodo);
     }
-    finalizarTurno(elemento);
+    finalizarMovimiento(ficha, elemento, esUsuario);
 }
 
-function agregarAMesa(nodo, pos) {
+function finalizarMovimiento(ficha, elemento, esUsuario) {
+    if (esUsuario) {
+        miMano = miMano.filter(f => f !== ficha);
+        elemento.remove();
+        document.getElementById('torn').innerText = "Turno de la PC...";
+        document.getElementById('btnPasar').style.display = "none";
+        setTimeout(jugarTurnoPC, 1500);
+    } else {
+        manoPC = manoPC.filter(f => f !== ficha);
+        document.getElementById('torn').innerText = "Tu Turno";
+        repartirManoUsuario();
+    }
+}
+
+function jugarTurnoPC() {
+    let fichaParaJugar = manoPC.find(f => f.includes(extremos.izq) || f.includes(extremos.der));
+
+    if (fichaParaJugar) {
+        let dummyImg = document.createElement('img');
+        dummyImg.src = "imagen/" + fichaParaJugar + ".png";
+        procesarJugada(fichaParaJugar, dummyImg, false);
+    } else {
+        if (pila.length > 0) {
+            manoPC.push(pila.shift());
+            setTimeout(jugarTurnoPC, 1000); // Roba y vuelve a intentar
+        } else {
+            alert("La PC PASA");
+            document.getElementById('torn').innerText = "Tu Turno";
+            repartirManoUsuario();
+        }
+    }
+}
+
+function accionPasarORobar() {
+    if (pila.length > 0) {
+        miMano.push(pila.shift());
+        repartirManoUsuario();
+    } else {
+        alert("Pasaste el turno");
+        document.getElementById('torn').innerText = "Turno de la PC...";
+        setTimeout(jugarTurnoPC, 1500);
+    }
+}
+
+function colocarEnPantalla(nodo, pos, rotar) {
     document.getElementById('jugades').appendChild(nodo);
 }
 
-function finalizarTurno(el) {
-    el.remove();
-    document.getElementById('torn').innerText = "Turno de la PC...";
-    setTimeout(() => { document.getElementById('torn').innerText = "Tu Turno"; }, 1500);
-}
-
 window.onload = iniciar;
+    
