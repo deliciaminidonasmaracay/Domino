@@ -1,114 +1,142 @@
-// --- CONFIGURACIÓN Y ESTADO ---
-let modoJuego = new URLSearchParams(window.location.search).get('mode'); 
+// --- Variables de Juego ---
 let puntas = { izq: null, der: null };
 let miMano = [];
-let turnoActual = 1; // 1: Usuario, 2: PC/Rival...
-let fichasRestantes = [];
+let manoPC = [];
+let pozo = [];
+const params = new URLSearchParams(window.location.search);
+const modoActual = params.get('mode'); 
 
-// --- 1. INICIALIZACIÓN SEGÚN TU AUDIO ---
-function iniciarPartidaEnMesa() {
-    let todas = [];
+window.onload = function() {
+    if (modoActual === 'pc') {
+        iniciarModoPC();
+    } else {
+        iniciarModoOnline();
+    }
+};
+
+// --- Lógica Modo PC ---
+function iniciarModoPC() {
+    document.getElementById('torn').innerText = "TU TURNO";
+    let mazo = [];
     for (let i = 0; i <= 6; i++) {
-        for (let j = i; j <= 6; j++) todas.push(`${i}${j}`);
+        for (let j = i; j <= 6; j++) mazo.push(`${i}${j}`);
     }
-
-    if (modoJuego === 'pc' || modoJuego === '1vs1') {
-        repartir(todas, 7, 2); // 2 jugadores, 7 fichas c/u
-    } else if (modoJuego === '2vs2') {
-        repartir(todas, 7, 4); // Parejas
-    } else if (modoJuego === '3vs3') { // Tu modo de 3
-        todas = todas.filter(f => f !== "00"); // Quitamos doble blanco
-        repartir(todas, 9, 3); // 9 fichas c/u
-    }
-}
-
-function repartir(mazo, cantidad, numJugadores) {
     mazo.sort(() => Math.random() - 0.5);
-    miMano = mazo.slice(0, cantidad);
-    // En modo PC, asignamos a la máquina
-    if (modoJuego === 'pc') {
-        manoPC = mazo.slice(cantidad, cantidad * 2);
-        pozo = mazo.slice(cantidad * 2);
-    }
-    actualizarInterfazMano();
+
+    miMano = mazo.slice(0, 7);
+    manoPC = mazo.slice(7, 14);
+    pozo = mazo.slice(14);
+
+    actualizarMesaVisual();
 }
 
-// --- 2. LÓGICA DE JUEGO (EL 4 CON EL 4) ---
+function actualizarMesaVisual() {
+    const contenedor = document.getElementById('contenedorFichas');
+    contenedor.innerHTML = "";
+    
+    miMano.forEach(ficha => {
+        const img = document.createElement('img');
+        img.src = `imagen/${ficha}.png`; // Usa tus imágenes 00.png, 01.png...
+        img.className = "ficha-mano";
+        img.onclick = () => intentarJugar(ficha);
+        contenedor.appendChild(img);
+    });
+
+    document.getElementById('fichas-pc').innerText = `Oponente: ${manoPC.length} fichas`;
+}
+
 function intentarJugar(ficha) {
     const n1 = parseInt(ficha[0]);
     const n2 = parseInt(ficha[1]);
 
     if (puntas.izq === null) {
         ejecutarMovimiento(ficha, 'der');
-        return;
-    }
-
-    const puedeIzq = (n1 === puntas.izq || n2 === puntas.izq);
-    const puedeDer = (n1 === puntas.der || n2 === puntas.der);
-
-    if (puedeIzq && puedeDer) {
-        mostrarDecision(ficha); // Tu pop-up si hay dos opciones
-    } else if (puedeIzq) {
+    } else if (n1 === puntas.izq || n2 === puntas.izq) {
         ejecutarMovimiento(ficha, 'izq');
-    } else if (puedeDer) {
+    } else if (n1 === puntas.der || n2 === puntas.der) {
         ejecutarMovimiento(ficha, 'der');
+    } else {
+        console.log("Ficha no sirve");
     }
 }
 
 function ejecutarMovimiento(ficha, lado) {
     const n1 = parseInt(ficha[0]);
     const n2 = parseInt(ficha[1]);
-    let invertida = false;
+    let inv = false;
 
     if (puntas.izq === null) {
         puntas.izq = n1; puntas.der = n2;
     } else if (lado === 'izq') {
-        if (n1 === puntas.izq) { puntas.izq = n2; invertida = true; }
-        else { puntas.izq = n1; invertida = false; }
+        if (n1 === puntas.izq) { puntas.izq = n2; inv = true; }
+        else { puntas.izq = n1; }
     } else {
-        if (n2 === puntas.der) { puntas.der = n1; invertida = true; }
-        else { puntas.der = n2; invertida = false; }
+        if (n2 === puntas.der) { puntas.der = n1; inv = true; }
+        else { puntas.der = n2; }
     }
 
-    dibujarFichaEnMesa(ficha, lado, invertida);
+    dibujarEnTablero(ficha, lado, inv);
     miMano = miMano.filter(f => f !== ficha);
     
-    if (modoJuego === 'pc') {
-        turnoActual = 2;
-        setTimeout(iaPC, 1000);
+    if (modoActual === 'pc') {
+        document.getElementById('torn').innerText = "PC PENSANDO...";
+        setTimeout(turnoIA, 1500);
     }
-    actualizarInterfazMano();
+    actualizarMesaVisual();
 }
 
-// --- 3. VISUALIZACIÓN (Mesa Marrón) ---
-function dibujarFichaEnMesa(ficha, lado, invertida) {
-    const mesa = document.getElementById('jugades');
+function dibujarEnTablero(ficha, lado, inv) {
+    const tablero = document.getElementById('jugades');
     const img = document.createElement('img');
     img.src = `imagen/${ficha}.png`;
-    
     const esDoble = ficha[0] === ficha[1];
-    let angulo = esDoble ? 0 : (invertida ? 270 : 90);
-
-    img.style.transform = `rotate(${angulo}deg)`;
-    img.style.margin = esDoble ? "0 5px" : "0 15px";
-
-    if (lado === 'izq') mesa.insertBefore(img, mesa.firstChild);
-    else mesa.appendChild(img);
+    img.style.transform = `rotate(${esDoble ? 0 : (inv ? 270 : 90)}deg)`;
+    
+    if (lado === 'izq') tablero.insertBefore(img, tablero.firstChild);
+    else tablero.appendChild(img);
 }
 
-// Lógica de IA para modo PC
-function iaPC() {
-    const jugada = manoPC.find(f => f.includes(puntas.izq) || f.includes(puntas.der));
-    if (jugada) {
-        const lado = jugada.includes(puntas.der) ? 'der' : 'izq';
-        ejecutarMovimientoIA(jugada, lado);
+function turnoIA() {
+    let fichaIA = manoPC.find(f => 
+        parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq ||
+        parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der
+    );
+
+    if (fichaIA) {
+        let l = (parseInt(fichaIA[0]) === puntas.der || parseInt(fichaIA[1]) === puntas.der) ? 'der' : 'izq';
+        manoPC = manoPC.filter(f => f !== fichaIA);
+        ejecutarMovimientoIA(fichaIA, l);
     } else if (pozo.length > 0) {
         manoPC.push(pozo.pop());
-        setTimeout(iaPC, 500);
+        turnoIA();
     } else {
-        turnoActual = 1; // Pasa turno al jugador
+        document.getElementById('torn').innerText = "TU TURNO (PC PASÓ)";
     }
 }
 
-window.onload = iniciarPartidaEnMesa;
-            
+function ejecutarMovimientoIA(ficha, lado) {
+    const n1 = parseInt(ficha[0]); const n2 = parseInt(ficha[1]);
+    let inv = false;
+    if (lado === 'izq') {
+        if (n1 === puntas.izq) { puntas.izq = n2; inv = true; }
+        else { puntas.izq = n1; }
+    } else {
+        if (n2 === puntas.der) { puntas.der = n1; inv = true; }
+        else { puntas.der = n2; }
+    }
+    dibujarEnTablero(ficha, lado, inv);
+    document.getElementById('torn').innerText = "TU TURNO";
+    actualizarMesaVisual();
+}
+
+// --- Lógica Online (Apunta a tu rama sala_espera) ---
+function iniciarModoOnline() {
+    db.ref('sala_espera/mesa_1').on('value', (snap) => {
+        if (snap.val()) {
+            document.getElementById('torn').innerText = "RIVAL CONECTADO";
+        } else {
+            document.getElementById('torn').innerText = "ESPERANDO JUGADOR...";
+        }
+    });
+}
+    
