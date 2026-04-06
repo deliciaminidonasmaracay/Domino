@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa de Juego - Dominó Venezuela</title>
+    <title>Dominó Venezuela - Mesa</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="pantallaJuego">
-        <h3 id="nombreOponente" style="color: #f1c40f; margin: 5px; text-transform: uppercase;">Oponente: Computador</h3>
+        <div id="zona-oponente">
+            <div>
+                <span id="txtPuntosUsuario" class="marcador-puntos">Usuario: 0</span>
+            </div>
+            <div id="info-pc">
+                <span style="color:white; font-size:12px;">COMPUTADOR</span>
+                <div id="fichas-pc">
+                    </div>
+            </div>
+            <div>
+                <span id="txtPuntosPC" class="marcador-puntos">PC: 0</span>
+            </div>
+        </div>
         
         <div id="jugades">
-            <div id="izq" class="dropZone">Punta Izq</div>
-            <div id="der" class="dropZone">Punta Der</div>
-        </div>
+            </div>
 
-        <div id="zona-controles" style="margin: 10px;">
+        <div id="zona-controles" style="margin: 10px; margin-bottom: 150px;">
             <div id="torn" style="font-weight: bold; color: #ecf0f1; margin-bottom: 5px;">Tu Turno</div>
-            <button id="btnAccion" onclick="gestionarPasoORobo()" 
-                    style="display:none; background:#f39c12; color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">
+            <button id="btnAccion" onclick="gestionarPasoORobo()" style="display:none;">
                 ROBAR FICHA
             </button>
         </div>
@@ -26,8 +35,8 @@
         <div id="contenedorFichas"></div>
 
         <button onclick="window.location.href='index.html'" 
-                style="background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin-top: 5px; cursor: pointer; font-size: 12px;">
-            ABANDONAR MESA
+                style="background: #c0392b; color: white; border: none; padding: 5px 10px; border-radius: 5px; position:fixed; top:70px; right:10px; z-index:100; font-size:10px;">
+            SALIR
         </button>
     </div>
 
