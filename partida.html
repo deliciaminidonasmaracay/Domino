@@ -3,56 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dominó Venezuela - Mesa Real</title>
+    <title>Dominó Venezuela - Mesa</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="pantallaJuego">
-        <div id="zona-superior">
-            <div class="marcador">
-                <span id="nombre-norte">OPONENTE (N)</span>
-                <div id="puntos-equipo-b" class="puntos">0</div>
+        <div id="zona-oponente">
+            <div id="info-pc">
+                <span id="torn">CARGANDO...</span>
+                <div id="fichas-pc"></div>
             </div>
         </div>
-
-        <div id="area-central">
-            <div id="zona-oeste" class="zona-lateral">
-                <div id="fichas-oeste" class="contador-fichas"></div>
-            </div>
-
-            <div id="jugades">
-                </div>
-
-            <div id="zona-este" class="zona-lateral">
-                <div id="fichas-este" class="contador-fichas"></div>
-            </div>
-        </div>
+        
+        <div id="jugades"></div>
 
         <div id="zona-inferior">
-            <div class="marcador-propio">
-                <span>TU PUNTAJE (S): </span>
-                <span id="puntos-equipo-a">0</span>
-            </div>
-            
-            <div id="contenedorFichas">
-                </div>
-
-            <div id="controles-jugador">
-                <div id="mensaje-turno">Esperando...</div>
-                <button id="btnAccion" onclick="gestionarPasoORobo()" style="display:none;">
-                    ROBAR / PASAR
-                </button>
-            </div>
-        </div>
-
-        <div id="menu-flotante">
-            <button onclick="window.location.href='index.html'" class="btn-salir">SALIR</button>
-            <div id="info-partida">Modo: <span id="txt-modo-actual">-</span></div>
+            <div id="contenedorFichas"></div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Tu configuración real de Firebase
+        var firebaseConfig = {
+          apiKey: "AIzaSyDgcAUndkipoX3RVkgkPk7UixhjzJ0USSg",
+          authDomain: "dominovenezuela-2624b.firebaseapp.com",
+          databaseURL: "https://dominovenezuela-2624b-default-rtdb.firebaseio.com",
+          projectId: "dominovenezuela-2624b",
+          storageBucket: "dominovenezuela-2624b.firebasestorage.app",
+          messagingSenderId: "861659676932",
+          appId: "1:861659676932:web:bf3c5560a2dd6937ccd051"
+        };
+        
+        // Inicialización segura
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+    </script>
     <script src="js/partida.js"></script>
 </body>
 </html>
