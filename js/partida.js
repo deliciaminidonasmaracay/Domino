@@ -9,6 +9,8 @@ const modoActual = params.get('mode');
 window.onload = function() {
     if (modoActual === 'pc') {
         iniciarModoPC();
+    } else if (modoActual === '3vs3') {
+        iniciarModo3Jugadores();
     } else {
         iniciarModoOnline();
     }
@@ -17,10 +19,7 @@ window.onload = function() {
 // --- Lógica Modo PC ---
 function iniciarModoPC() {
     document.getElementById('torn').innerText = "TU TURNO";
-    let mazo = [];
-    for (let i = 0; i <= 6; i++) {
-        for (let j = i; j <= 6; j++) mazo.push(`${i}${j}`);
-    }
+    let mazo = generarMazo();
     mazo.sort(() => Math.random() - 0.5);
 
     miMano = mazo.slice(0, 7);
@@ -30,19 +29,59 @@ function iniciarModoPC() {
     actualizarMesaVisual();
 }
 
+// --- NUEVO: Modo 3 Jugadores (Sin doble blanco) ---
+function iniciarModo3Jugadores() {
+    document.getElementById('torn').innerText = "TU TURNO";
+    let mazo = generarMazo().filter(f => f !== "00"); // Regla: sin 0-0
+    mazo.sort(() => Math.random() - 0.5);
+
+    miMano = mazo.slice(0, 9); // 9 fichas cada uno
+    manoPC = mazo.slice(9, 18); // Oponente virtual 1
+    // El resto (18-27) sería para un tercer jugador (PC o Online)
+    
+    actualizarMesaVisual();
+}
+
+// --- Lógica Online (Apunta a tu rama sala_espera) ---
+function iniciarModoOnline() {
+    // Escucha la rama 'sala_espera' de tu captura de pantalla
+    db.ref('sala_espera/mesa_1').on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+            document.getElementById('torn').innerText = "RIVAL CONECTADO";
+            // Si el oponente jugó, actualizamos nuestra mesa
+            if (data.ultimaJugada && data.quien !== "YO") {
+                recibirJugadaOnline(data.ultimaJugada, data.lado);
+            }
+        } else {
+            document.getElementById('torn').innerText = "ESPERANDO JUGADOR...";
+        }
+    });
+}
+
+// --- Funciones de Soporte (Sin tocar tu lógica de tiro) ---
+function generarMazo() {
+    let m = [];
+    for (let i = 0; i <= 6; i++) {
+        for (let j = i; j <= 6; j++) m.push(`${i}${j}`);
+    }
+    return m;
+}
+
 function actualizarMesaVisual() {
     const contenedor = document.getElementById('contenedorFichas');
     contenedor.innerHTML = "";
     
     miMano.forEach(ficha => {
         const img = document.createElement('img');
-        img.src = `imagen/${ficha}.png`; // Usa tus imágenes 00.png, 01.png...
+        img.src = `imagen/${ficha}.png`;
         img.className = "ficha-mano";
         img.onclick = () => intentarJugar(ficha);
         contenedor.appendChild(img);
     });
 
-    document.getElementById('fichas-pc').innerText = `Oponente: ${manoPC.length} fichas`;
+    const infoOponente = document.getElementById('fichas-pc');
+    if (infoOponente) infoOponente.innerText = `Oponente: ${manoPC.length} fichas`;
 }
 
 function intentarJugar(ficha) {
@@ -78,11 +117,37 @@ function ejecutarMovimiento(ficha, lado) {
     dibujarEnTablero(ficha, lado, inv);
     miMano = miMano.filter(f => f !== ficha);
     
-    if (modoActual === 'pc') {
+    // Si es online, avisamos a Firebase
+    if (modoActual !== 'pc' && modoActual !== '3vs3') {
+        db.ref('sala_espera/mesa_1').update({
+            ultimaJugada: ficha,
+            lado: lado,
+            quien: "YO"
+        });
+    }
+
+    if (modoActual === 'pc' || modoActual === '3vs3') {
         document.getElementById('torn').innerText = "PC PENSANDO...";
         setTimeout(turnoIA, 1500);
     }
     actualizarMesaVisual();
+}
+
+function recibirJugadaOnline(ficha, lado) {
+    // Esta función dibuja lo que el otro jugador mandó por Firebase
+    const n1 = parseInt(ficha[0]);
+    const n2 = parseInt(ficha[1]);
+    let inv = false;
+
+    if (lado === 'izq') {
+        if (n1 === puntas.izq) { puntas.izq = n2; inv = true; }
+        else { puntas.izq = n1; }
+    } else {
+        if (n2 === puntas.der) { puntas.der = n1; inv = true; }
+        else { puntas.der = n2; }
+    }
+    dibujarEnTablero(ficha, lado, inv);
+    document.getElementById('torn').innerText = "TU TURNO";
 }
 
 function dibujarEnTablero(ficha, lado, inv) {
@@ -127,16 +192,4 @@ function ejecutarMovimientoIA(ficha, lado) {
     dibujarEnTablero(ficha, lado, inv);
     document.getElementById('torn').innerText = "TU TURNO";
     actualizarMesaVisual();
-}
-
-// --- Lógica Online (Apunta a tu rama sala_espera) ---
-function iniciarModoOnline() {
-    db.ref('sala_espera/mesa_1').on('value', (snap) => {
-        if (snap.val()) {
-            document.getElementById('torn').innerText = "RIVAL CONECTADO";
-        } else {
-            document.getElementById('torn').innerText = "ESPERANDO JUGADOR...";
-        }
-    });
-}
-    
+    }
