@@ -3,41 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dominó Venezuela - Inicio</title>
+    <title>Dominó Venezuela - Lobby</title>
     <style>
-        body { background: #1a252f; color: white; font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .contenedor { background: #2c3e50; padding: 30px; border-radius: 15px; border: 2px solid #f1c40f; box-shadow: 0 0 20px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; }
-        h1 { color: #f1c40f; text-shadow: 2px 2px 4px #000; }
-        button { background: #003366; color: white; border: 1px solid #f1c40f; padding: 15px; margin: 10px 0; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #f1c40f; color: #1a252f; }
-        #ventanaEspera { display: none; background: #000; padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #27ae60; }
-        .contador { font-size: 30px; color: #f1c40f; font-weight: bold; margin: 10px 0; }
+        body { background: #1a252f; color: white; font-family: Arial; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .contenedor { background: #2c3e50; padding: 30px; border-radius: 15px; border: 2px solid #f1c40f; width: 90%; max-width: 400px; text-align: center; }
+        button { background: #003366; color: white; border: 1px solid #f1c40f; padding: 15px; margin: 10px 0; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        #ventanaEspera { display: none; background: #000; padding: 20px; border-radius: 10px; border: 1px solid #27ae60; }
+        .contador { font-size: 40px; color: #f1c40f; }
     </style>
 </head>
 <body>
     <div class="contenedor">
-        <h1>DOMINÓ VENEZUELA</h1>
         <div id="menuModos">
-            <button onclick="entrar('PC')">Vs Computadora</button>
-            <button onclick="entrar('2')">2 Jugadores</button>
-            <button onclick="entrar('3')">3 Jugadores</button>
-            <button onclick="entrar('4')">4 Jugadores</button>
+            <h1>DOMINÓ VENEZUELA</h1>
+            <button onclick="gestionarEntrada('PC')">Vs Computadora</button>
+            <button onclick="gestionarEntrada('2')">2 Jugadores</button>
+            <button onclick="gestionarEntrada('4')">4 Jugadores</button>
         </div>
         <div id="ventanaEspera">
-            <h3>En espera de jugadores...</h3>
+            <h2 id="msg">Buscando mesa...</h2>
             <div class="contador" id="conteo">1 / --</div>
-            <p id="infoRed">Conectando a Realtime Database...</p>
-            <button onclick="location.reload()" style="background:#c0392b; width:auto; padding:10px; font-size:14px;">Cancelar</button>
+            <button onclick="location.reload()" style="background:#c0392b; width:auto; padding:10px;">CANCELAR</button>
         </div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        function entrar(modo) {
+        // Tu URL de la captura integrada
+        const firebaseConfig = { databaseURL: "https://dominovenezuela-2624b-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function gestionarEntrada(modo) {
             document.getElementById('menuModos').style.display = 'none';
             document.getElementById('ventanaEspera').style.display = 'block';
-            let meta = (modo === 'PC') ? '1' : modo;
-            document.getElementById('conteo').innerText = "1 / " + meta;
-            // Redirige a la partida con el modo seleccionado
-            setTimeout(() => { window.location.href = 'partida.html?modo=' + modo; }, 1500);
+            
+            if(modo === 'PC') {
+                window.location.href = 'partida.html?modo=PC';
+            } else {
+                const salaRef = db.ref('sala_espera/' + modo);
+                salaRef.transaction((actual) => {
+                    return (actual || 0) + 1;
+                }, (error, committed, snapshot) => {
+                    const conectados = snapshot.val();
+                    document.getElementById('conteo').innerText = conectados + " / " + modo;
+                    
+                    salaRef.on('value', (snap) => {
+                        if(snap.val() >= parseInt(modo)) {
+                            window.location.href = 'partida.html?modo=' + modo;
+                        }
+                    });
+                });
+            }
         }
     </script>
 </body>
