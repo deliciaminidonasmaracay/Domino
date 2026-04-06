@@ -3,99 +3,93 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Dominó Maracay - Final</title>
+    <title>Dominó Venezuela - V3</title>
     <style>
         body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        
-        /* CABECERA CON PUNTAJE */
-        #header { 
-            background: #2c3e50; padding: 10px 20px; display: flex; 
-            justify-content: space-between; align-items: center; border-bottom: 3px solid #f1c40f;
-        }
-        .marcador { font-size: 1.2em; font-weight: bold; }
-        .puntos { color: #f1c40f; }
-
-        /* MESA */
+        #header { background: #2c3e50; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #f1c40f; }
         .mesa-verde { 
             background: radial-gradient(circle, #27ae60 0%, #1e8449 100%);
             border: 10px solid #5d4037; border-radius: 40px; 
             height: 55vh; margin: 10px; position: relative;
-            box-shadow: inset 0 0 50px #000; display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 50px #000; display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
         #jugades { display: flex; align-items: center; justify-content: center; }
-        #jugades img { height: 70px; margin: 1px; border-radius: 4px; box-shadow: 2px 2px 5px #000; }
-
-        /* PIEDRAS DEL OPONENTE (Visual) */
-        #area-pc { padding: 5px; text-align: center; }
-        .ficha-oculta { width: 30px; height: 50px; background: #eee; border: 2px solid #999; border-radius: 4px; display: inline-block; margin: 2px; position: relative; }
-        .ficha-oculta::after { content: "•"; color: #333; font-size: 30px; position: absolute; top: 5px; left: 8px; }
-
-        /* CONTENEDOR DE JUGADOR Y BOTÓN */
-        #footer { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 10px 0; }
-        #contenedorFichas { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+        #jugades img { height: 75px; margin: 1px; border-radius: 4px; box-shadow: 2px 2px 5px #000; }
+        #area-pc { padding: 10px; text-align: center; height: 60px; }
+        .ficha-oculta { width: 25px; height: 40px; background: #eee; border: 1px solid #999; border-radius: 3px; display: inline-block; margin: 2px; }
+        #footer { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 10px 0; min-height: 120px; }
+        #contenedorFichas { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
         .ficha-mano { width: 55px; cursor: pointer; transition: 0.2s; }
-        
-        #btn-accion { 
-            display: none; background: #e67e22; color: white; border: none; 
-            padding: 10px 30px; border-radius: 5px; font-weight: bold; margin: 0 auto 10px auto;
-        }
-        
-        #torn { text-align: center; font-size: 1.1em; color: #f1c40f; margin-bottom: 5px; }
+        #btn-accion { display: none; background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin: 5px auto; block-size: auto; }
+        #torn { text-align: center; font-size: 1.1em; color: #f1c40f; margin-bottom: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div class="marcador">TÚ: <span id="pts-yo" class="puntos">0</span></div>
-        <div id="torn">CARGANDO...</div>
-        <div class="marcador">PC: <span id="pts-pc" class="puntos">0</span></div>
+        <div>TÚ: <span id="pts-yo" style="color:#f1c40f">0</span></div>
+        <div id="torn">INICIANDO...</div>
+        <div>PC: <span id="pts-pc" style="color:#f1c40f">0</span></div>
     </div>
 
-    <div id="area-pc">
-        <div id="visual-pc"></div> </div>
+    <div id="area-pc"><div id="visual-pc"></div></div>
     
     <div class="mesa-verde">
         <div id="jugades"></div>
     </div>
 
     <div id="footer">
-        <button id="btn-accion" onclick="accionMazo()"></button>
+        <center><button id="btn-accion" onclick="accionMazo()"></button></center>
         <div id="contenedorFichas"></div>
     </div>
 
     <script>
         let puntas = { izq: null, der: null };
         let miMano = [], manoPC = [], pozo = [];
-        let puntosYo = 0, puntosPC = 0;
+        const params = new URLSearchParams(window.location.search);
+        const modoActual = params.get('mode') || 'pc';
 
+        // IMPORTANTE: Ajuste a tus nombres de archivo
         function getFichaImg(f) { return `imagen/ficha_${f[0]}_${f[1]}.png`; }
 
-        function iniciar() {
+        window.onload = function() {
+            console.log("Modo detectado:", modoActual);
+            prepararMazo();
+        };
+
+        function prepararMazo() {
             let mazo = [];
             for (let i=0; i<=6; i++) for (let j=i; j<=6; j++) mazo.push(`${i}${j}`);
-            mazo.sort(() => Math.random() - 0.5);
             
-            miMano = mazo.slice(0, 7);
-            manoPC = mazo.slice(7, 14);
-            pozo = mazo.slice(14);
+            // Regla de 9 fichas (Modo 3 jugadores / Sin 0-0)
+            if (modoActual === '3vs3') {
+                mazo = mazo.filter(f => f !== "00");
+                mazo.sort(() => Math.random() - 0.5);
+                miMano = mazo.slice(0, 9);
+                manoPC = mazo.slice(9, 18); // Simulación oponente 1
+                pozo = []; // En modo 9 no suele haber pozo
+            } else {
+                mazo.sort(() => Math.random() - 0.5);
+                miMano = mazo.slice(0, 7);
+                manoPC = mazo.slice(7, 14);
+                pozo = mazo.slice(14);
+            }
             
             actualizarInterfaz();
-            verificarBloqueoUsuario();
+            verificarTurnoJugador();
         }
 
         function actualizarInterfaz() {
-            // Dibujar mi mano
             const cont = document.getElementById('contenedorFichas');
             cont.innerHTML = "";
             miMano.forEach(f => {
                 const img = document.createElement('img');
                 img.src = getFichaImg(f);
                 img.className = "ficha-mano";
-                img.onclick = () => jugar(f, "YO");
+                img.onclick = () => intentarJugar(f, "YO");
                 cont.appendChild(img);
             });
 
-            // Dibujar piedras oponente (visual)
             const visPC = document.getElementById('visual-pc');
             visPC.innerHTML = "";
             manoPC.forEach(() => {
@@ -104,10 +98,12 @@
                 visPC.appendChild(div);
             });
             
-            document.getElementById('torn').innerText = "TU TURNO";
+            if(document.getElementById('torn').innerText === "INICIANDO...") {
+                document.getElementById('torn').innerText = "TU TURNO";
+            }
         }
 
-        function jugar(f, autor) {
+        function intentarJugar(f, autor) {
             const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
             let lado = null;
 
@@ -115,16 +111,86 @@
             else if (n1 === puntas.izq || n2 === puntas.izq) lado = 'izq';
             else if (n1 === puntas.der || n2 === puntas.der) lado = 'der';
 
-            if (lado) {
-                ejecutar(f, lado, autor);
-            }
+            if (lado) ejecutarJugada(f, lado, autor);
         }
 
-        function ejecutar(f, lado, autor) {
+        function ejecutarJugada(f, lado, autor) {
             const n1 = parseInt(f[0]), n2 = parseInt(f[1]);
             let inv = false;
 
-            if (puntas.izq === null) { puntas.izq = n1; puntas.der = n2; }
-            else if (lado === 'izq') {
-                if (n1 === puntas.izq) { puntas.izq = n2; inv = true; } else { puntas.izq
-        
+            if (puntas.izq === null) {
+                puntas.izq = n1; puntas.der = n2;
+            } else if (lado === 'izq') {
+                if (n1 === puntas.izq) { puntas.izq = n2; inv = true; } else { puntas.izq = n1; }
+            } else {
+                if (n2 === puntas.der) { puntas.der = n1; inv = true; } else { puntas.der = n2; }
+            }
+
+            const img = document.createElement('img');
+            img.src = getFichaImg(f);
+            img.style.transform = `rotate(${n1===n2 ? 0 : (inv ? 270 : 90)}deg)`;
+            const mesa = document.getElementById('jugades');
+            if (lado === 'izq') mesa.insertBefore(img, mesa.firstChild); else mesa.appendChild(img);
+
+            if (autor === "YO") {
+                miMano = miMano.filter(x => x !== f);
+                document.getElementById('btn-accion').style.display = "none";
+                document.getElementById('torn').innerText = "PC PENSANDO...";
+                setTimeout(iaTurno, 1200);
+            } else {
+                manoPC = manoPC.filter(x => x !== f);
+                document.getElementById('torn').innerText = "TU TURNO";
+                verificarTurnoJugador();
+            }
+            actualizarInterfaz();
+            if (miMano.length === 0) { alert("¡Dominó! Ganaste."); location.reload(); }
+            if (manoPC.length === 0) { alert("La PC ha ganado."); location.reload(); }
+        }
+
+        function verificarTurnoJugador() {
+            const puedeJugar = miMano.some(f => 
+                puntas.izq === null || 
+                parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq ||
+                parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der
+            );
+
+            if (!puedeJugar) {
+                const btn = document.getElementById('btn-accion');
+                btn.style.display = "block";
+                btn.innerText = pozo.length > 0 ? "ROBAR FICHA" : "PASAR TURNO";
+            }
+        }
+
+        function accionMazo() {
+            if (pozo.length > 0) {
+                miMano.push(pozo.pop());
+                actualizarInterfaz();
+                verificarTurnoJugador();
+            } else {
+                document.getElementById('btn-accion').style.display = "none";
+                document.getElementById('torn').innerText = "PASASTE TURNO";
+                setTimeout(iaTurno, 1000);
+            }
+        }
+
+        function iaTurno() {
+            let fIA = manoPC.find(f => 
+                parseInt(f[0]) === puntas.izq || parseInt(f[1]) === puntas.izq ||
+                parseInt(f[0]) === puntas.der || parseInt(f[1]) === puntas.der
+            );
+
+            if (fIA) {
+                let l = (parseInt(fIA[0]) === puntas.der || parseInt(fIA[1]) === puntas.der) ? 'der' : 'izq';
+                ejecutarJugada(fIA, l, "PC");
+            } else if (pozo.length > 0) {
+                manoPC.push(pozo.pop());
+                setTimeout(iaTurno, 500);
+            } else {
+                document.getElementById('torn').innerText = "PC PASÓ. TU TURNO";
+                verificarTurnoJugador();
+            }
+            actualizarInterfaz();
+        }
+    </script>
+</body>
+</html>
