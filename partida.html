@@ -3,46 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dominó Venezuela - Mesa</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Dominó Maracay - Mesa</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; margin: 0; overflow: hidden; }
+        .mesa { 
+            background: #27ae60; border: 12px solid #5d4037; border-radius: 25px;
+            height: 75vh; margin: 10px; position: relative; overflow: auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #jugades { display: flex; align-items: center; padding: 50px; }
+        #jugades img { height: 60px; margin: 2px; }
+        #contenedorFichas { 
+            position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.7);
+            padding: 15px; display: flex; justify-content: center; gap: 5px;
+        }
+        .ficha-mano { width: 50px; cursor: pointer; transition: 0.2s; }
+        .ficha-mano:hover { transform: translateY(-10px); }
+        #torn { position: absolute; top: 20px; width: 100%; text-align: center; font-weight: bold; font-size: 1.2em; text-shadow: 2px 2px 4px #000; }
+        #fichas-pc { position: absolute; top: 50px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
+    </style>
 </head>
 <body>
-    <div id="pantallaJuego">
-        <div id="zona-oponente">
-            <div id="info-pc">
-                <span id="torn">CARGANDO...</span>
-                <div id="fichas-pc"></div>
-            </div>
-        </div>
-        
+    <div id="torn">CARGANDO...</div>
+    <div id="fichas-pc">Oponente: --</div>
+    
+    <div class="mesa">
         <div id="jugades"></div>
-
-        <div id="zona-inferior">
-            <div id="contenedorFichas"></div>
-        </div>
     </div>
+
+    <div id="contenedorFichas"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-    <script>
-        // Tu configuración real de Firebase
-        var firebaseConfig = {
-          apiKey: "AIzaSyDgcAUndkipoX3RVkgkPk7UixhjzJ0USSg",
-          authDomain: "dominovenezuela-2624b.firebaseapp.com",
-          databaseURL: "https://dominovenezuela-2624b-default-rtdb.firebaseio.com",
-          projectId: "dominovenezuela-2624b",
-          storageBucket: "dominovenezuela-2624b.firebasestorage.app",
-          messagingSenderId: "861659676932",
-          appId: "1:861659676932:web:bf3c5560a2dd6937ccd051"
-        };
-        
-        // Inicialización segura
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-    </script>
+    <script src="js/config.js"></script> 
     <script src="js/partida.js"></script>
 </body>
 </html>
