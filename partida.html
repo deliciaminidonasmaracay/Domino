@@ -3,37 +3,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dominó Maracay - Estable</title>
+    <title>Dominó Maracay - Final</title>
     <style>
         :root { --oro: #f1c40f; }
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; touch-action: none; }
         #header { background: #1c2833; padding: 10px; display: flex; justify-content: space-between; border-bottom: 2px solid var(--oro); position: relative; z-index: 10; }
-        
-        /* Mesa con soporte para Zoom y Arrastre */
-        #mesa-container {
-            height: 55vh; overflow: hidden; background: radial-gradient(circle, #27ae60 0%, #145a32 100%);
-            position: relative; cursor: grab;
-        }
-        #camino { 
-            display: flex; align-items: center; gap: 0px; position: absolute;
-            top: 50%; left: 50%; transform-origin: center; transform: translate(-50%, -50%) scale(1);
-        }
+        #mesa-container { height: 55vh; overflow: hidden; background: radial-gradient(circle, #27ae60 0%, #145a32 100%); position: relative; }
+        #camino { display: flex; align-items: center; gap: 0px; position: absolute; top: 50%; left: 50%; transform-origin: center; transform: translate(-50%, -50%) scale(1); }
 
-        /* Estética de las fichas en la mesa */
-        .bloque-ficha { width: 80px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .bloque-doble { width: 45px; height: 80px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        
-        .ficha-tablero { height: 80px; width: 45px; filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.4)); }
+        /* Contenedores de fichas */
+        .bloque-ficha { width: 80px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+        .bloque-doble { width: 45px; height: 80px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+        .ficha-tablero { height: 80px; width: 45px; filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.4)); transition: transform 0.2s; }
 
-        /* Clases de rotación según tu lógica */
-        .giro-izq { transform: rotate(-90deg); } /* Acostada a la izquierda */
-        .giro-der { transform: rotate(90deg); }  /* Acostada a la derecha */
-        .doble-parado { transform: rotate(0deg); } /* Doble atravesado */
+        /* Estilos de giro para la serpiente */
+        .giro-abajo { flex-direction: column; width: 45px !important; height: 80px !important; }
 
         #footer { background: #111; padding: 15px; border-top: 2px solid var(--oro); position: fixed; bottom: 0; width: 100%; z-index: 10; }
         #mis-fichas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-        .ficha-mano { width: 45px; height: auto; cursor: pointer; border: 1px solid #333; border-radius: 4px; }
-        
+        .ficha-mano { width: 45px; cursor: pointer; border: 1px solid #333; border-radius: 4px; }
         .btn-oro { background: var(--oro); color: #000; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         #selector-punta { display: none; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 15px; border-radius: 10px; border: 1px solid var(--oro); z-index: 100; }
     </style>
@@ -68,6 +56,7 @@
     let puntas = { izq: null, der: null };
     let juego = { yo: [], pc: [], mazo: [] };
     let escala = 1;
+    let conteo = { izq: 0, der: 0 };
 
     window.onload = () => {
         let deck = [];
@@ -85,7 +74,6 @@
         cont.innerHTML = "";
         juego.yo.forEach(f => {
             const img = document.createElement('img');
-            // Usamos siempre el nombre del archivo con los números ordenados
             img.src = `imagen/${Math.min(f[0],f[1])}${Math.max(f[0],f[1])}.png`;
             img.className = "ficha-mano";
             img.onclick = () => intentarJugar(f);
@@ -114,42 +102,46 @@
     }
 
     function colocar(f, lado, autor) {
-        let n1 = f[0], n2 = f[1], nombreImg = "";
+        let n1 = f[0], n2 = f[1];
         const esDoble = (n1 === n2);
+        let rotacion = 0;
+        let invertir = false;
 
         if (puntas.izq === null) {
             puntas.izq = n1; puntas.der = n2;
-            nombreImg = `${Math.min(n1,n2)}${Math.max(n1,n2)}`;
         } else if (lado === 'izq') {
-            // Si el número que pega es el primero de nuestra ficha
-            if (n1 === puntas.izq) { nombreImg = `${n2}${n1}`; puntas.izq = n2; }
-            else { nombreImg = `${n1}${n2}`; puntas.izq = n1; }
+            conteo.izq++;
+            if (n1 === puntas.izq) { invertir = true; puntas.izq = n2; }
+            else { invertir = false; puntas.izq = n1; }
+            rotacion = -90;
         } else {
-            // Si el número que pega es el primero de nuestra ficha
-            if (n1 === puntas.der) { nombreImg = `${n1}${n2}`; puntas.der = n2; }
-            else { nombreImg = `${n2}${n1}`; puntas.der = n1; }
+            conteo.der++;
+            if (n1 === puntas.der) { invertir = false; puntas.der = n2; }
+            else { invertir = true; puntas.der = n1; }
+            rotacion = 90;
         }
 
         const bloque = document.createElement('div');
         bloque.className = esDoble ? "bloque-doble" : "bloque-ficha";
         
+        // LÓGICA DE SERPIENTE: Si llegamos a 7, doblar hacia abajo
+        if (conteo[lado] >= 7) {
+            bloque.classList.add('giro-abajo');
+            rotacion = 0; // Al ir hacia abajo, la ficha se ve "normal"
+        }
+
         const img = document.createElement('img');
-        // Tu carpeta tiene las fichas como "13.png", aquí buscamos la imagen original
         img.src = `imagen/${Math.min(f[0],f[1])}${Math.max(f[0],f[1])}.png`;
         img.className = "ficha-tablero";
-        
-        // Aplicar giros basados en tu lógica
+
+        // EL ARREGLO MAESTRO: Si la lógica dice invertir, usamos scaleX(-1) para que los puntos peguen
+        let transformacion = "";
         if (esDoble) {
-            img.classList.add('doble-parado');
+            transformacion = "rotate(0deg)";
         } else {
-            // Si el archivo cargado es "13" pero la lógica pidió "31", invertimos antes de rotar
-            let invertida = (nombreImg !== `${Math.min(f[0],f[1])}${Math.max(f[0],f[1])}`);
-            if (lado === 'izq') {
-                img.style.transform = invertida ? "rotate(90deg)" : "rotate(-90deg)";
-            } else {
-                img.style.transform = invertida ? "rotate(-90deg)" : "rotate(90deg)";
-            }
+            transformacion = `rotate(${rotacion}deg) ${invertir ? 'scaleX(-1)' : ''}`;
         }
+        img.style.transform = transformacion;
         
         bloque.appendChild(img);
         const cam = document.getElementById('camino');
@@ -162,22 +154,21 @@
         renderMano();
     }
 
-    // Zoom táctil (Pinch-to-zoom)
     function setupZoom() {
         const mesa = document.getElementById('mesa-container');
         const cam = document.getElementById('camino');
-        let distInicial = 0, escalaInicial = 1;
+        let distI = 0, escI = 1;
 
         mesa.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
-                distInicial = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                escalaInicial = escala;
+                distI = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                escI = escala;
             }
         });
         mesa.addEventListener('touchmove', e => {
             if (e.touches.length === 2) {
                 let dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                escala = Math.min(Math.max(escalaInicial * (dist / distInicial), 0.3), 1.5);
+                escala = Math.min(Math.max(escI * (dist / distI), 0.2), 1.5);
                 cam.style.transform = `translate(-50%, -50%) scale(${escala})`;
             }
         });
