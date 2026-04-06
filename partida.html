@@ -3,60 +3,36 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dominó Maracay</title>
+    <title>Dominó Maracay - Estable</title>
     <style>
         :root { --oro: #f1c40f; }
         body { background: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; touch-action: none; }
+        #header { background: #1c2833; padding: 10px; display: flex; justify-content: space-between; border-bottom: 2px solid var(--oro); position: relative; z-index: 10; }
         
-        #header { background: #1c2833; padding: 10px; display: flex; justify-content: space-between; border-bottom: 2px solid var(--oro); z-index: 10; position: relative; }
-        
-        /* Contenedor con ZOOM */
+        /* Mesa con soporte para Zoom y Arrastre */
         #mesa-container {
-            height: 55vh;
-            overflow: hidden;
-            background: radial-gradient(circle, #27ae60 0%, #145a32 100%);
-            position: relative;
-            cursor: grab;
+            height: 55vh; overflow: hidden; background: radial-gradient(circle, #27ae60 0%, #145a32 100%);
+            position: relative; cursor: grab;
         }
-
         #camino { 
-            display: flex; 
-            align-items: center; 
-            gap: 0px; 
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform-origin: center;
-            transition: transform 0.1s ease-out;
+            display: flex; align-items: center; gap: 0px; position: absolute;
+            top: 50%; left: 50%; transform-origin: center; transform: translate(-50%, -50%) scale(1);
         }
 
-        /* Bloque base para fichas normales (acostadas) */
-        .bloque-ficha {
-            width: 80px; height: 45px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
+        /* Estética de las fichas en la mesa */
+        .bloque-ficha { width: 80px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .bloque-doble { width: 45px; height: 80px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        
+        .ficha-tablero { height: 80px; width: 45px; filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.4)); }
 
-        /* Bloque especial para DOBLES (parados) */
-        .bloque-doble {
-            width: 45px; height: 80px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .ficha-tablero { 
-            height: 80px; width: 45px; 
-            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.4));
-        }
-
-        /* Corrección de giros */
-        .normal-izq { transform: rotate(-90deg); }
-        .normal-der { transform: rotate(90deg); }
-        .es-doble { transform: rotate(0deg); } /* Los dobles no rotan, van parados */
+        /* Clases de rotación según tu lógica */
+        .giro-izq { transform: rotate(-90deg); } /* Acostada a la izquierda */
+        .giro-der { transform: rotate(90deg); }  /* Acostada a la derecha */
+        .doble-parado { transform: rotate(0deg); } /* Doble atravesado */
 
         #footer { background: #111; padding: 15px; border-top: 2px solid var(--oro); position: fixed; bottom: 0; width: 100%; z-index: 10; }
-        #mis-fichas { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-        .ficha-mano { width: 45px; height: auto; cursor: pointer; border: 1px solid #333; }
+        #mis-fichas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .ficha-mano { width: 45px; height: auto; cursor: pointer; border: 1px solid #333; border-radius: 4px; }
         
         .btn-oro { background: var(--oro); color: #000; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         #selector-punta { display: none; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 15px; border-radius: 10px; border: 1px solid var(--oro); z-index: 100; }
@@ -72,15 +48,15 @@
 
 <div id="mesa-container">
     <div id="selector-punta">
-        <p style="text-align:center;">¿Punta?</p>
-        <button class="btn-oro" id="btn-izq">IZQ</button>
-        <button class="btn-oro" id="btn-der">DER</button>
+        <p style="text-align:center; margin-top:0;">¿Dónde juegas?</p>
+        <button class="btn-oro" id="btn-izq">IZQUIERDA</button>
+        <button class="btn-oro" id="btn-der">DERECHA</button>
     </div>
     <div id="camino"></div>
 </div>
 
 <div id="footer">
-    <div id="status-msg" style="text-align:center; color:var(--oro); font-size: 14px;">TU TURNO</div>
+    <div id="status-msg" style="text-align:center; color:var(--oro); font-weight:bold;">TU TURNO</div>
     <div id="mis-fichas"></div>
     <div style="text-align:center; margin-top:10px;">
         <button id="btn-robar" style="display:none;" class="btn-oro" onclick="robar()">ROBAR</button>
@@ -91,9 +67,8 @@
 <script>
     let puntas = { izq: null, der: null };
     let juego = { yo: [], pc: [], mazo: [] };
-    let escala = 1, posX = 0, posY = 0;
+    let escala = 1;
 
-    // INICIO DEL JUEGO
     window.onload = () => {
         let deck = [];
         for (let i=0; i<=6; i++) for (let j=i; j<=6; j++) deck.push([i, j]);
@@ -110,6 +85,7 @@
         cont.innerHTML = "";
         juego.yo.forEach(f => {
             const img = document.createElement('img');
+            // Usamos siempre el nombre del archivo con los números ordenados
             img.src = `imagen/${Math.min(f[0],f[1])}${Math.max(f[0],f[1])}.png`;
             img.className = "ficha-mano";
             img.onclick = () => intentarJugar(f);
@@ -143,12 +119,13 @@
 
         if (puntas.izq === null) {
             puntas.izq = n1; puntas.der = n2;
-            nombreImg = `${n1}${n2}`;
+            nombreImg = `${Math.min(n1,n2)}${Math.max(n1,n2)}`;
         } else if (lado === 'izq') {
-            // Lógica de giro corregida para que el número conecte
+            // Si el número que pega es el primero de nuestra ficha
             if (n1 === puntas.izq) { nombreImg = `${n2}${n1}`; puntas.izq = n2; }
             else { nombreImg = `${n1}${n2}`; puntas.izq = n1; }
         } else {
+            // Si el número que pega es el primero de nuestra ficha
             if (n1 === puntas.der) { nombreImg = `${n1}${n2}`; puntas.der = n2; }
             else { nombreImg = `${n2}${n1}`; puntas.der = n1; }
         }
@@ -157,19 +134,27 @@
         bloque.className = esDoble ? "bloque-doble" : "bloque-ficha";
         
         const img = document.createElement('img');
-        img.src = `imagen/${nombreImg}.png`;
+        // Tu carpeta tiene las fichas como "13.png", aquí buscamos la imagen original
+        img.src = `imagen/${Math.min(f[0],f[1])}${Math.max(f[0],f[1])}.png`;
         img.className = "ficha-tablero";
         
-        if (esDoble) img.classList.add('es-doble');
-        else img.classList.add(lado === 'izq' ? 'normal-izq' : 'normal-der');
+        // Aplicar giros basados en tu lógica
+        if (esDoble) {
+            img.classList.add('doble-parado');
+        } else {
+            // Si el archivo cargado es "13" pero la lógica pidió "31", invertimos antes de rotar
+            let invertida = (nombreImg !== `${Math.min(f[0],f[1])}${Math.max(f[0],f[1])}`);
+            if (lado === 'izq') {
+                img.style.transform = invertida ? "rotate(90deg)" : "rotate(-90deg)";
+            } else {
+                img.style.transform = invertida ? "rotate(-90deg)" : "rotate(90deg)";
+            }
+        }
         
         bloque.appendChild(img);
         const cam = document.getElementById('camino');
         if (lado === 'izq') cam.insertBefore(bloque, cam.firstChild);
         else cam.appendChild(bloque);
-
-        // Centrar automáticamente la "serpiente"
-        centrarCamino();
 
         juego[autor] = juego[autor].filter(x => x !== f);
         if (juego[autor].length === 0) { alert(autor === 'yo' ? "¡DOMINÓ!" : "GANÓ PC"); location.reload(); }
@@ -177,29 +162,23 @@
         renderMano();
     }
 
-    function centrarCamino() {
-        const cam = document.getElementById('camino');
-        cam.style.transform = `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${escala})`;
-    }
-
-    // ZOOM Y ARRASTRE (Multi-touch)
+    // Zoom táctil (Pinch-to-zoom)
     function setupZoom() {
         const mesa = document.getElementById('mesa-container');
         const cam = document.getElementById('camino');
-        let inicialDist = 0, inicialEscala = 1;
+        let distInicial = 0, escalaInicial = 1;
 
         mesa.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
-                inicialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                inicialEscala = escala;
+                distInicial = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                escalaInicial = escala;
             }
         });
-
         mesa.addEventListener('touchmove', e => {
             if (e.touches.length === 2) {
                 let dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                escala = Math.min(Math.max(inicialEscala * (dist / inicialDist), 0.3), 2);
-                centrarCamino();
+                escala = Math.min(Math.max(escalaInicial * (dist / distInicial), 0.3), 1.5);
+                cam.style.transform = `translate(-50%, -50%) scale(${escala})`;
             }
         });
     }
