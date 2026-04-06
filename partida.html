@@ -3,60 +3,74 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Dominó Venezuela Pro</title>
+    <title>Dominó Venezuela Pro - Vista Real</title>
     <style>
-        body { background: #1a1a1a; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-        #header { background: #2c3e50; padding: 10px; display: flex; justify-content: space-between; border-bottom: 3px solid #f1c40f; z-index: 100; position: relative; }
+        body { background: #121212; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; overflow: hidden; }
         
-        .contenedor-mesa { position: relative; width: 100vw; height: 60vh; display: flex; align-items: center; justify-content: center; background: #111; }
+        /* HEADER MEJORADO */
+        #header { background: #1c2833; padding: 12px; display: flex; justify-content: space-between; border-bottom: 4px solid #f1c40f; box-shadow: 0 4px 10px rgba(0,0,0,0.5); position: relative; z-index: 100; }
+        .pts { color: #f1c40f; font-weight: bold; font-size: 1.3em; }
+
+        .contenedor-mesa { position: relative; width: 100vw; height: 60vh; display: flex; align-items: center; justify-content: center; background: #000; }
         
+        /* MESA CON MEJOR CONTRASTE */
         .mesa-verde { 
-            background: radial-gradient(circle, #27ae60 0%, #1e8449 100%);
-            border: 10px solid #5d4037; border-radius: 50px; 
-            width: 85%; height: 80%; position: relative;
-            box-shadow: inset 0 0 50px #000; overflow: hidden; z-index: 1;
+            background: radial-gradient(circle, #2ecc71 0%, #1b5e20 100%);
+            border: 14px solid #4e342e; border-radius: 60px; 
+            width: 92%; height: 88%; position: relative;
+            box-shadow: inset 0 0 80px #000, 0 10px 30px rgba(0,0,0,0.8); 
+            overflow: auto; z-index: 1;
         }
 
-        /* LAS PIEDRAS DE LOS OPONENTES - AHORA CON Z-INDEX ALTO */
+        /* PIEDRAS DE LOS OPONENTES (VISIBILIDAD TOTAL) */
         .info-jugador { 
-            position: absolute; background: rgba(0,0,0,0.8); padding: 8px; 
-            border-radius: 8px; text-align: center; z-index: 50; 
-            border: 1px solid #f1c40f; min-width: 100px;
+            position: absolute; background: rgba(255,255,255,0.1); 
+            backdrop-filter: blur(5px); padding: 10px; 
+            border-radius: 12px; text-align: center; z-index: 50; 
+            border: 2px solid #f1c40f; min-width: 120px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
-        .pos-arriba { top: 10px; left: 50%; transform: translateX(-50%); }
-        .pos-derecha { right: 10px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
-        .pos-izquierda { left: 10px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+        .pos-arriba { top: 15px; left: 50%; transform: translateX(-50%); }
+        .pos-derecha { right: 15px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .pos-izquierda { left: 15px; top: 50%; transform: translateY(-50%) rotate(90deg); }
         
-        /* ESTILO DE LAS FICHAS BLANCAS (PINTAS) */
-        .pintas-visual { display: flex; gap: 4px; justify-content: center; margin-top: 5px; flex-wrap: wrap; }
+        /* ESTILO DE LA PARTE TRASERA DE LAS FICHAS */
+        .pintas-visual { display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
         .pinta-back { 
-            width: 14px; height: 22px; background: #ffffff; /* Blanco puro para que se vea */
-            border: 1px solid #000; border-radius: 3px; 
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            width: 18px; height: 28px; 
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%); 
+            border: 1.5px solid #333; border-radius: 4px; 
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+            position: relative;
         }
+        .pinta-back::after { content: ""; position: absolute; top: 50%; left: 10%; width: 80%; height: 2px; background: rgba(0,0,0,0.1); }
 
-        #jugades { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 5; }
-        #jugades img { height: 75px; margin: 1px; filter: drop-shadow(2px 2px 3px #000); }
+        /* FICHAS EN JUEGO (MÁS GRANDES Y NÍTIDAS) */
+        #jugades { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 5; padding: 20px; }
+        #jugades img { height: 100px; margin: 3px; filter: drop-shadow(4px 4px 6px rgba(0,0,0,0.7)); transition: all 0.2s; }
 
-        #footer { position: fixed; bottom: 0; width: 100%; background: #000; padding: 10px 0; border-top: 2px solid #f1c40f; z-index: 100; }
-        #contenedorFichas { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 5px; }
-        .ficha-mano { width: 55px; cursor: pointer; border-radius: 4px; }
+        /* FOOTER Y TU MANO */
+        #footer { position: fixed; bottom: 0; width: 100%; background: #0a0a0a; padding: 15px 0; border-top: 4px solid #f1c40f; z-index: 100; }
+        #contenedorFichas { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 5px 15px; }
+        .ficha-mano { width: 68px; cursor: pointer; border-radius: 6px; transition: 0.2s; filter: drop-shadow(2px 2px 4px #000); }
+        .ficha-mano:hover { transform: translateY(-10px) scale(1.1); }
         
-        #btn-accion { display: none; background: #e67e22; color: #fff; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
-        #torn { text-align: center; color: #f1c40f; font-weight: bold; margin-bottom: 5px; font-size: 1.2em; }
+        #btn-accion { display: none; background: #d35400; color: #fff; border: none; padding: 18px 35px; border-radius: 10px; font-weight: bold; margin-bottom: 12px; font-size: 1.2em; cursor: pointer; box-shadow: 0 5px #a04000; }
+        #btn-accion:active { transform: translateY(3px); box-shadow: 0 2px #a04000; }
+        #torn { text-align: center; color: #f1c40f; font-weight: bold; margin-bottom: 10px; font-size: 1.4em; text-shadow: 2px 2px 4px #000; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div>NOS: <span id="pts-nos" style="color:#f1c40f">0</span></div>
-        <div id="status">PARTIDA</div>
-        <div>ELLOS: <span id="pts-ell" style="color:#f1c40f">0</span></div>
+        <div>NOS: <span id="pts-nos" class="pts">0</span></div>
+        <div id="status" style="font-size: 0.9em; opacity: 0.8;">MESA DE TORNEO</div>
+        <div>ELLOS: <span id="pts-ell" class="pts">0</span></div>
     </div>
 
     <div class="contenedor-mesa">
         <div id="ui-arriba" class="info-jugador pos-arriba">
-            <span id="label-top">RIVAL</span>
+            <span style="font-weight: bold;">RIVAL</span>
             <div id="v-op-top" class="pintas-visual"></div>
         </div>
         
@@ -75,6 +89,7 @@
     </div>
 
     <script>
+        // Lógica de juego mantenida para no dañar el funcionamiento
         let puntas = { izq: null, der: null };
         let manos = { yo: [], opTop: [], opIzq: [], opDer: [], pozo: [] };
         const params = new URLSearchParams(window.location.search);
@@ -113,7 +128,6 @@
                 cont.appendChild(img);
             });
 
-            // RENDERIZADO CRÍTICO DE PIEZAS VISIBLES
             renderPiedras('v-op-top', manos.opTop.length);
             if (modo === '2vs2') {
                 renderPiedras('v-op-izq', manos.opIzq.length);
@@ -139,7 +153,6 @@
             if (puntas.izq === null) lado = 'der';
             else if (n1 === puntas.izq || n2 === puntas.izq) lado = 'izq';
             else if (n1 === puntas.der || n2 === puntas.der) lado = 'der';
-            
             if (lado) poner(f, lado, autor);
         }
 
@@ -167,7 +180,7 @@
             let sig = (modo === '2vs2') ? { "yo":"opIzq", "opIzq":"opTop", "opTop":"opDer", "opDer":"yo" } : { "yo":"opTop", "opTop":"yo" };
             let proximo = sig[autor];
             if (proximo !== "yo") {
-                document.getElementById('torn').innerText = "ESPERANDO...";
+                document.getElementById('torn').innerText = "ESPERANDO JUGADA...";
                 setTimeout(() => turnoIA(proximo), 1000);
             } else {
                 document.getElementById('torn').innerText = "TU TURNO";
@@ -209,4 +222,5 @@
         }
     </script>
 </body>
-</html>
+        </html>
+        
