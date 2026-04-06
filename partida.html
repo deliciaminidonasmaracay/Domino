@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa de Juego - Dominó Venezuela</title>
+    <title>Dominó Venezuela - Mesa</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="pantallaJuego">
-        <h3 id="estadoModo" style="color: #f1c40f; margin: 5px;">Cargando...</h3>
+        <h3 id="estadoModo" style="color: #f1c40f; margin: 5px;">MODO: VS PC</h3>
         
         <div id="jugades">
             <div id="izq" class="dropZone">Punta Izq</div>
             <div id="der" class="dropZone">Punta Der</div>
         </div>
 
-        <div id="torn" style="margin: 10px; font-weight: bold; color: #ecf0f1;">Tu Turno</div>
+        <div id="controles-accion" style="margin: 10px;">
+            <div id="torn" style="font-weight: bold; color: #ecf0f1; margin-bottom: 5px;">Tu Turno</div>
+            <button id="btnPasar" onclick="accionPasarORobar()" 
+                    style="background: #f39c12; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none;">
+                PASAR / ROBAR
+            </button>
+        </div>
         
         <div id="contenedorFichas"></div>
 
