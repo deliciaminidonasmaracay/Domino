@@ -3,66 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extractor de Código - Dominó</title>
+    <title>Extractor Profesional - Dominó</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: white; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
-        button { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        textarea { width: 100%; height: 300px; margin-top: 20px; background: #000; color: #0f0; font-family: monospace; border-radius: 5px; }
-        .instrucciones { background: #333; padding: 10px; border-radius: 5px; font-size: 0.9em; margin-bottom: 15px; }
+        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: white; margin: 0; }
+        .container { max-width: 600px; margin: auto; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1em; }
+        .btn-extraer { background: #27ae60; color: white; }
+        .btn-descargar { background: #2980b9; color: white; display: none; } /* Oculto hasta que haya datos */
+        textarea { width: 100%; height: 250px; background: #000; color: #0f0; font-family: monospace; border-radius: 5px; padding: 10px; box-sizing: border-box; }
+        #estado { color: #f1c40f; text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
 
+<div class="container">
     <h2>Analizador de Modelos</h2>
-    <div class="instrucciones">
-        Introduce la URL del juego (ej: https://solitar.io/domino) para extraer su estructura y lógica.
-    </div>
+    <p style="font-size: 0.8em; color: #aaa;">Extrae el código completo y descárgalo para enviármelo sin errores.</p>
 
-    <input type="text" id="urlPagina" placeholder="https://direccion-del-juego.com">
-    <button onclick="capturarCodigo()">EXTRAER CÓDIGO Y FUNCIONAMIENTO</button>
+    <input type="text" id="urlPagina" placeholder="https://solitar.io/domino" value="https://solitar.io/domino">
+    
+    <button class="btn-extraer" onclick="capturarCodigo()">1. EXTRAER TODO EL CÓDIGO</button>
+    <button id="btnDescargar" class="btn-descargar" onclick="descargarArchivo()">2. DESCARGAR ARCHIVO (.TXT)</button>
 
-    <h4 id="estado"></h4>
-    <textarea id="resultado" placeholder="El código aparecerá aquí..."></textarea>
+    <div id="estado"></div>
+    <textarea id="resultado" readonly placeholder="El código aparecerá aquí..."></textarea>
+</div>
 
-    <script>
-        async function capturarCodigo() {
-            const url = document.getElementById('urlPagina').value;
-            const estado = document.getElementById('estado');
-            const resultado = document.getElementById('resultado');
+<script>
+    let contenidoGlobal = "";
 
-            if (!url) {
-                alert("Por favor, mete una dirección");
-                return;
-            }
+    async function capturarCodigo() {
+        const url = document.getElementById('urlPagina').value;
+        const estado = document.getElementById('estado');
+        const resultado = document.getElementById('resultado');
+        const btnD = document.getElementById('btnDescargar');
 
-            estado.innerText = "Capturando... por favor espera";
+        if (!url) return alert("Pon la URL");
+
+        estado.innerText = "⏳ Extrayendo datos de la página...";
+        
+        // Proxy para saltar el CORS
+        const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+
+        try {
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
             
-            // Usamos un proxy para saltar el bloqueo de CORS del celular
-            const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+            contenidoGlobal = data.contents;
+            resultado.value = contenidoGlobal;
+            
+            estado.innerText = "✅ ¡Listo! Ya puedes descargar el archivo.";
+            btnD.style.display = "block"; // Mostramos el botón de descarga
 
-            try {
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                
-                // Limpiamos el código para que sea legible
-                let codigoLimpio = data.contents;
-                
-                // Buscamos scripts específicos de lógica de juego para mostrártelos primero
-                const scripts = codigoLimpio.match(/<script\b[^>]*>([\s\S]*?)<\/script>/g) || [];
-                
-                resultado.value = "--- ESTRUCTURA HTML Y SCRIPTS DETECTADOS ---\n\n" + 
-                                  "Total de Scripts encontrados: " + scripts.length + "\n\n" +
-                                  codigoLimpio;
-                
-                estado.innerText = "¡Captura completada!";
-                console.log("Código base extraído con éxito");
-
-            } catch (error) {
-                estado.innerText = "Error en la captura";
-                resultado.value = "Error: No se pudo acceder a la página. Intenta con otra URL o verifica que la dirección sea correcta.";
-            }
+        } catch (error) {
+            estado.innerText = "❌ Error al conectar";
+            resultado.value = "Intenta con otra URL o revisa tu conexión.";
         }
-    </script>
+    }
+
+    function descargarArchivo() {
+        if (!contenidoGlobal) return;
+        
+        const blob = new Blob([contenidoGlobal], { type: "text/plain" });
+        const urlDescarga = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        
+        // Nombre del archivo basado en la fecha para que no te confundas
+        const nombreArchivo = "codigo_extraido_" + new Date().getTime() + ".txt";
+        
+        a.href = urlDescarga;
+        a.download = nombreArchivo;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(urlDescarga);
+    }
+</script>
+
 </body>
 </html>
